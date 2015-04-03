@@ -1,0 +1,18 @@
+<?xml version="1.0"?>
+<robot name="r2" xmlns:xacro="http://ros.org/wiki/xacro">
+	<xacro:property name="PI" value="3.1415926535897931" />
+	<xacro:include filename="$(find hector_sensors_description)/urdf/asus_camera.urdf.xacro" />
+
+	<link name="base_link">
+		<visual>
+			<origin xyz="0.02 0.165 0.2" rpy="${PI} 0 0"/>
+			<geometry>
+				<mesh filename="package://wild_thumper/meshes/wild_thumper_assembly_corrected.stl" scale="0.001 0.001 0.001" />
+			</geometry>
+		</visual>
+	</link>
+
+	<xacro:asus_camera name="camera" parent="base_link">
+		<origin xyz="0 0.19 0.15" rpy="0 0 ${PI/2}"/>
+	</xacro:asus_camera>
+</robot>
