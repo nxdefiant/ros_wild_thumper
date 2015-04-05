@@ -23,6 +23,11 @@ class MoveBase:
 			rate.sleep()
 
 	def set_speed(self, left, right):
+		if left > 0: left+=80
+		elif left < 0: left-=80
+		if right > 0: right+=80
+		elif right < 0: right-=80
+
 		if left > 255: left=255
 		elif left < -255: left=-255
 		if right > 255: right=255

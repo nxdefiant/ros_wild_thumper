@@ -1,9 +1,9 @@
 <?xml version="1.0"?>
 <launch>
 	<node pkg="turtlebot_teleop" type="turtlebot_teleop_joy" name="turtlebot_teleop_joystick">
-		<param name="scale_linear" value="35"/>
-		<param name="scale_angular" value="25"/>
-		<param name="axis_deadman" value="10"/>
+		<param name="scale_linear" value="25"/>
+		<param name="scale_angular" value="20"/>
+		<param name="axis_deadman" value="3"/>
 		<param name="axis_linear" value="1"/>
 		<param name="axis_angular" value="0"/>
 		<remap from="turtlebot_teleop_joystick/cmd_vel" to="/cmd_vel"/>
