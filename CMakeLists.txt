@@ -4,7 +4,7 @@ project(wild_thumper)
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
-find_package(catkin REQUIRED)
+find_package(catkin REQUIRED sensor_msgs cv_bridge roscpp std_msgs image_transport dynamic_reconfigure)
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
@@ -66,6 +66,10 @@ find_package(catkin REQUIRED)
 #   std_msgs  # Or other packages containing msgs
 # )
 
+generate_dynamic_reconfigure_options(
+  cfg/path_following.cfg
+)
+
 ###################################
 ## catkin specific configuration ##
 ###################################
@@ -78,7 +82,7 @@ find_package(catkin REQUIRED)
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES wild_thumper
-#  CATKIN_DEPENDS other_catkin_pkg
+#   CATKIN_DEPENDS sensor_msgs
 #  DEPENDS system_lib
 )
 
@@ -96,16 +100,16 @@ catkin_package(
 # )
 
 ## Declare a cpp executable
-# add_executable(wild_thumper_node src/wild_thumper_node.cpp)
+add_executable(path_following src/path_following.cpp)
 
 ## Add cmake target dependencies of the executable/library
 ## as an example, message headers may need to be generated before nodes
-# add_dependencies(wild_thumper_node wild_thumper_generate_messages_cpp)
+add_dependencies(path_following ${PROJECT_NAME}_gencfg)
 
 ## Specify libraries to link a library or executable target against
-# target_link_libraries(wild_thumper_node
-#   ${catkin_LIBRARIES}
-# )
+target_link_libraries(path_following
+   ${catkin_LIBRARIES}
+)
 
 #############
 ## Install ##
