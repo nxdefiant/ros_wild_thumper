@@ -1,0 +1,5 @@
+http://palmavr.sourceforge.net/cgi-bin/fc.cgi
+
+avrdude -p atmega32 -P usb -c avrisp2 -U lfuse:r:-:i -U hfuse:r:-:i
+
+avrdude -p atmega32 -P usb -c avrisp2 -U lfuse:w:0x23:m -U hfuse:w:0xc9:m

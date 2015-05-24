@@ -81,22 +81,11 @@ static volatile int16_t speed1_wish=0;
 static volatile int16_t speed2_wish=0;
 static volatile int16_t speed3_wish=0;
 static volatile int16_t speed4_wish=0;
-static volatile int16_t speed1=0;
-static volatile int16_t speed2=0;
-static volatile int16_t speed3=0;
-static volatile int16_t speed4=0;
-static volatile int16_t eold1=0;
-static volatile int16_t eold2=0;
-static volatile int16_t eold3=0;
-static volatile int16_t eold4=0;
-static volatile int32_t esum1=0;
-static volatile int32_t esum2=0;
-static volatile int32_t esum3=0;
-static volatile int32_t esum4=0;
-static volatile int16_t pos1_last=0;
-static volatile int16_t pos2_last=0;
-static volatile int16_t pos3_last=0;
-static volatile int16_t pos4_last=0;
+static volatile uint16_t run_pid=0;
+static int16_t speed1=0;
+static int16_t speed2=0;
+static int16_t speed3=0;
+static int16_t speed4=0;
 
 ISR(TWI_vect)
 {
@@ -323,8 +312,8 @@ static void update_hall1(void) {
 	diff = oldstatus - new;				// difference last - new
 	if (diff & 0x1) {				// bit 0 = value (1)
 		oldstatus = new;					// store new as next last
-		if (motor1_switch) pos1 -= (diff & 2) - 1;		// bit 1 = direction (+/-)
-		else pos1 += (diff & 2) - 1;
+		if (motor1_switch) pos1 += (diff & 2) - 1;		// bit 1 = direction (+/-)
+		else pos1 -= (diff & 2) - 1;
 	}
 }
 
@@ -462,13 +451,20 @@ static void update_motor(void) {
 }
 
 
-ISR(TIMER0_OVF_vect) {
-	update_hall1();
-	update_hall2();
-	update_hall3();
-	update_hall4();
+void update_pid(void) {
+	static int16_t pos1_last=0;
+	static int16_t pos2_last=0;
+	static int16_t pos3_last=0;
+	static int16_t pos4_last=0;
+	static int16_t eold1=0;
+	static int16_t eold2=0;
+	static int16_t eold3=0;
+	static int16_t eold4=0;
+	static int32_t esum1=0;
+	static int32_t esum2=0;
+	static int32_t esum3=0;
+	static int32_t esum4=0;
 
-	// PID control
 	if (motor1_mode == MOTOR_PID) {
 		speed1 = (pos1 - pos1_last)/TIMER0_T;
 
@@ -540,6 +536,16 @@ ISR(TIMER0_OVF_vect) {
 }
 
 
+ISR(TIMER1_OVF_vect) {
+	update_hall1();
+	update_hall2();
+	update_hall3();
+	update_hall4();
+	
+	run_pid++;
+}
+
+
 int main(void) {
 	// Outputs
 	DDRB = (1 << 3);
@@ -555,23 +561,23 @@ int main(void) {
 	TWI_RESET;
 
 	// Motor 1 & 2
-	// Timer 1: Fast PWM inverting mode, Top=256 => 15.625Hz
+	// Timer 1: Fast PWM inverting mode, Top=256 => 15.625kHz
 	// Prescaler=1
-	TCCR1A = (1 << COM1A1) | (1 << COM1B1) | (1 << WGM10);
+	TCCR1A = (1 << COM1A1) | (1 << COM1B1) | (1 << COM1A0) | (1 << COM1B0) | (1 << WGM10);
 	TCCR1B = (1 << WGM12) | (1 << CS10);
 	OCR1A = 0;
 	OCR1B = 0;
 
 	// Motor 3
-	// Timer 2: Fast PWM, Top=256 => 15.625Hz
+	// Timer 2: Fast PWM inverting mode, Top=256 => 15.625kHz
 	// Prescaler=1
-	TCCR2 = (1 << WGM21) | (1 << WGM20) | (1 << COM21) | (1 << CS20);
+	TCCR2 = (1 << WGM21) | (1 << WGM20) | (1 << COM21) | (1 << COM20) | (1 << CS20);
 	OCR2 = 0;
 
 	// Motor 4
-	// Timer 0: Fast PWM, Top=256 => 15.625Hz
+	// Timer 0: Fast PWM inverting mode, Top=256 => 15.625kHz
 	// Prescaler=1
-	TCCR0 = (1 << WGM01) | (1 << WGM00) | (1 << COM01) | (1 << CS00);
+	TCCR0 = (1 << WGM01) | (1 << WGM00) | (1 << COM01) | (1 << COM00) | (1 << CS00);
 	OCR0 = 0;
 
 	printf("\r\nStart\r\n");
@@ -593,6 +599,13 @@ int main(void) {
 				}
 				break;
 		}
+		
+
+		if (run_pid >= 781) { // ~20Hz
+			run_pid=0;
+			update_pid();
+		}
+
 		update_motor();
 
 		sleep_mode();
