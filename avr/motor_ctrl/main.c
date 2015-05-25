@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <limits.h>
+#include <math.h>
 #include <avr/io.h>
 #include <avr/interrupt.h>
 #include <avr/sleep.h>
@@ -35,7 +36,14 @@
  * 0x25 Motor 3 speed wish LSB
  * 0x26 Motor 4 speed wish MSB
  * 0x27 Motor 4 speed wish LSB
- * free
+ * 0x28 Left speed wish (m/s) MSB
+ * 0x29 Left speed wish (m/s)
+ * 0x2A Left speed wish (m/s)
+ * 0x2B Left speed wish (m/s) LSB
+ * 0x2C Right speed wish (m/s) MSB
+ * 0x2D Right speed wish (m/s)
+ * 0x2E Right speed wish (m/s)
+ * 0x2F Right speed wish (m/s) LSB
  * 0x30 Motor 1 speed MSB
  * 0x31 Motor 1 speed LSB
  * 0x32 Motor 2 speed MSB
@@ -44,11 +52,42 @@
  * 0x35 Motor 3 speed LSB
  * 0x36 Motor 4 speed MSB
  * 0x37 Motor 4 speed LSB
+ * 0x38 Speed (m/s) MSB
+ * 0x39 Speed (m/s)
+ * 0x3A Speed (m/s)
+ * 0x3B Speed (m/s) LSB
+ * 0x3C Angle (rad/s) MSB
+ * 0x3D Angle (rad/s)
+ * 0x3E Angle (rad/s)
+ * 0x3F Angle (rad/s) LSB
+ * free
+ * 0x40 Position x (m) MSB
+ * 0x41 Position x (m)
+ * 0x42 Position x (m)
+ * 0x43 Position x (m) LSB
+ * 0x44 Position y (m) MSB
+ * 0x45 Position y (m)
+ * 0x46 Position y (m)
+ * 0x47 Position y (m) LSB
+ * 0x48 Position angle MSB
+ * 0x49 Position angle
+ * 0x4A Position angle
+ * 0x4B Position angle LSB
+ * free
+ * 0x50 speed wish (m/s) MSB
+ * 0x51 speed wish (m/s)
+ * 0x52 speed wish (m/s)
+ * 0x53 speed wish (m/s) LSB
+ * 0x54 angle wish (rad/s) MSB
+ * 0x55 angle wish (rad/s)
+ * 0x56 angle wish (rad/s)
+ * 0x57 angle wish (rad/s) LSB
  * free
  * 0x90 Motor 1 switch
  * 0x91 Motor 2 switch
  * 0x92 Motor 3 switch
  * 0x93 Motor 4 switch
+ * 0x94 TLE Error status
  * free
  * 0xff Bootloader
  */
@@ -61,20 +100,27 @@
 #define KP 0.009
 #define KI 0.051429
 #define KD 0.000378
-#define TIMER1_T 0.01
+#define PID_T 0.01
+#define STEP_PER_M 3376.1 // wheel diameter=12cm, encoder=48cpr, gear ratio=1:34
+#define WHEEL_DIST 0.252
 
 enum mode {
 	MOTOR_MANUAL,
 	MOTOR_PID
 };
 
+typedef union {
+	float f;
+	uint32_t i;
+} ufloat_t;
+
 static volatile uint8_t ireg=0;
 static volatile uint8_t bootloader=0;
-static volatile int16_t motor1=0;
+static volatile int16_t motor1=0; // -255..+255
 static volatile int16_t motor2=0;
 static volatile int16_t motor3=0;
 static volatile int16_t motor4=0;
-static volatile int16_t pos1=0;
+static volatile int16_t pos1=0; // step
 static volatile int16_t pos2=0;
 static volatile int16_t pos3=0;
 static volatile int16_t pos4=0;
@@ -86,20 +132,25 @@ static volatile uint8_t motor1_switch=0;
 static volatile uint8_t motor2_switch=0;
 static volatile uint8_t motor3_switch=0;
 static volatile uint8_t motor4_switch=0;
-static volatile int16_t speed1_wish=0;
+static volatile int16_t speed1_wish=0; // step/s
 static volatile int16_t speed2_wish=0;
 static volatile int16_t speed3_wish=0;
 static volatile int16_t speed4_wish=0;
-static volatile uint8_t run_pid=0;
-static int16_t speed1=0;
-static int16_t speed2=0;
-static int16_t speed3=0;
-static int16_t speed4=0;
+static volatile uint8_t run_update=0;
+static volatile int16_t speed1=0; // step/s
+static volatile int16_t speed2=0;
+static volatile int16_t speed3=0;
+static volatile int16_t speed4=0;
+static volatile ufloat_t pos_x={0.0};
+static volatile ufloat_t pos_y={0.0};
+static volatile ufloat_t angle={0.0};
 
 ISR(TWI_vect)
 {
 	static uint8_t tmp=0;
 	static int16_t tmp16=0;
+	static ufloat_t tmp_speed;
+	static ufloat_t tmp_angle;
 
 	switch (TWSR & 0xF8)
 	{  
@@ -183,6 +234,90 @@ ISR(TWI_vect)
 					break;
 				case 0x27: // Motor 4 speed wish LSB
 					speed4_wish = tmp<<8 | TWDR;
+					motor4_mode = MOTOR_PID;
+					TWI_ACK;
+					break;
+				case 0x28: // Left speed wish MSB
+					tmp_speed.i = TWDR;
+					TWI_ACK;
+					break;
+				case 0x29: // Left speed wish
+					tmp_speed.i = tmp_speed.i << 8 | TWDR;
+					TWI_ACK;
+					break;
+				case 0x2A: // Left speed wish
+					tmp_speed.i = tmp_speed.i << 8 | TWDR;
+					TWI_ACK;
+					break;
+				case 0x2B: // Left speed wish LSB
+					tmp_speed.i = tmp_speed.i << 8 | TWDR;
+					speed1_wish = tmp_speed.f*STEP_PER_M;
+					speed2_wish = tmp_speed.f*STEP_PER_M;
+					motor1_mode = MOTOR_PID;
+					motor2_mode = MOTOR_PID;
+					TWI_ACK;
+					break;
+				case 0x2C: // Right speed wish MSB
+					tmp_speed.i = TWDR;
+					TWI_ACK;
+					break;
+				case 0x2D: // Right speed wish
+					tmp_speed.i = tmp_speed.i << 8 | TWDR;
+					TWI_ACK;
+					break;
+				case 0x2E: // Right speed wish
+					tmp_speed.i = tmp_speed.i << 8 | TWDR;
+					TWI_ACK;
+					break;
+				case 0x2F: // Right speed wish LSB
+					tmp_speed.i = tmp_speed.i << 8 | TWDR;
+					speed1_wish = tmp_speed.f*STEP_PER_M;
+					speed2_wish = tmp_speed.f*STEP_PER_M;
+					motor1_mode = MOTOR_PID;
+					motor2_mode = MOTOR_PID;
+					TWI_ACK;
+					break;
+				case 0x50: // speed wish MSB
+					tmp_speed.i = TWDR;
+					TWI_ACK;
+					break;
+				case 0x51: // speed wish
+					tmp_speed.i = tmp_speed.i << 8 | TWDR;
+					TWI_ACK;
+					break;
+				case 0x52: // speed wish
+					tmp_speed.i = tmp_speed.i << 8 | TWDR;
+					TWI_ACK;
+					break;
+				case 0x53: // speed wish LSB
+					tmp_speed.i = tmp_speed.i << 8 | TWDR;
+					TWI_ACK;
+					break;
+				case 0x54: // angle wish MSB
+					tmp_angle.i = TWDR;
+					TWI_ACK;
+					break;
+				case 0x55: // angle wish
+					tmp_angle.i = tmp_angle.i << 8 | TWDR;
+					TWI_ACK;
+					break;
+				case 0x56: // angle wish
+					tmp_angle.i = tmp_angle.i << 8 | TWDR;
+					TWI_ACK;
+					break;
+				case 0x57: // angle wish LSB
+					tmp_angle.i = tmp_angle.i << 8 | TWDR;
+					{
+					float speed_wish_right = tmp_angle.f*M_PI*WHEEL_DIST/2 + tmp_speed.f;
+					float speed_wish_left = tmp_speed.f*2-speed_wish_right;
+					speed1_wish = speed_wish_left*STEP_PER_M;
+					speed2_wish = speed_wish_left*STEP_PER_M;
+					speed3_wish = speed_wish_right*STEP_PER_M;
+					speed4_wish = speed_wish_right*STEP_PER_M;
+					}
+					motor1_mode = MOTOR_PID;
+					motor2_mode = MOTOR_PID;
+					motor3_mode = MOTOR_PID;
 					motor4_mode = MOTOR_PID;
 					TWI_ACK;
 					break;
@@ -326,6 +461,96 @@ ISR(TWI_vect)
 					break;
 				case 0x37: // Motor 4 speed LSB
 					TWDR = speed4;
+					TWI_ACK;
+					break;
+				case 0x38: // speed MSB
+					{
+					int16_t speed_l = (speed3+speed4)/2;
+					int16_t speed_r = (speed1+speed2)/2;
+					tmp_speed.f = (speed_l + speed_r)/(2.0*STEP_PER_M);
+					tmp_angle.f = (speed_r - speed_l)/(M_PI*WHEEL_DIST*STEP_PER_M);
+					}
+					TWDR = tmp_speed.i>>24;
+					TWI_ACK;
+					break;
+				case 0x39: // speed
+					TWDR = tmp_speed.i>>16;
+					TWI_ACK;
+					break;
+				case 0x3A: // speed
+					TWDR = tmp_speed.i>>8;
+					TWI_ACK;
+					break;
+				case 0x3B: // speed LSB
+					TWDR = tmp_speed.i;
+					TWI_ACK;
+					break;
+				case 0x3C: // angle MSB
+					TWDR = tmp_angle.i>>24;
+					TWI_ACK;
+					break;
+				case 0x3D: // angle
+					TWDR = tmp_angle.i>>16;
+					TWI_ACK;
+					break;
+				case 0x3E: // angle
+					TWDR = tmp_angle.i>>8;
+					TWI_ACK;
+					break;
+				case 0x3F: // angle LSB
+					TWDR = angle.i;
+					TWI_ACK;
+					break;
+				case 0x40: // Position x MSB
+					TWDR = pos_x.i>>24;
+					TWI_ACK;
+					break;
+				case 0x41: // Position x
+					TWDR = pos_x.i>>16;
+					TWI_ACK;
+					break;
+				case 0x42: // Position x
+					TWDR = pos_x.i>>8;
+					TWI_ACK;
+					break;
+				case 0x43: // Position x LSB
+					TWDR = pos_x.i;
+					TWI_ACK;
+					break;
+				case 0x44: // Position y MSB
+					TWDR = pos_y.i>>24;
+					TWI_ACK;
+					break;
+				case 0x45: // Position y
+					TWDR = pos_y.i>>16;
+					TWI_ACK;
+					break;
+				case 0x46: // Position y
+					TWDR = pos_y.i>>8;
+					TWI_ACK;
+					break;
+				case 0x47: // Position y LSB
+					TWDR = pos_y.i;
+					TWI_ACK;
+					break;
+				case 0x48: // Position angle MSB
+					TWDR = pos_y.i>>24;
+					TWI_ACK;
+					break;
+				case 0x49: // Position angle
+					TWDR = pos_y.i>>16;
+					TWI_ACK;
+					break;
+				case 0x4A: // Position angle
+					TWDR = pos_y.i>>8;
+					TWI_ACK;
+					break;
+				case 0x4B: // Position angle LSB
+					TWDR = pos_y.i;
+					TWI_ACK;
+					break;
+				case 0x94: // TLE Error status
+					TWDR = (PIND & 0x40)>>2 | (PINB & 0x07);
 					TWI_ACK;
 					break;
 				default:
@@ -492,11 +717,52 @@ static void update_motor(void) {
 }
 
 
-void update_pid(void) {
+static void update_pos(void) {
 	static int16_t pos1_last=0;
 	static int16_t pos2_last=0;
 	static int16_t pos3_last=0;
 	static int16_t pos4_last=0;
+	int16_t pos1_diff; // steps
+	int16_t pos2_diff;
+	int16_t pos3_diff;
+	int16_t pos4_diff;
+	float diff_left_m, diff_right_m, angle_diff, translation;
+
+	//cli();
+	pos1_diff = pos1 - pos1_last;
+	pos2_diff = pos2 - pos2_last;
+	pos3_diff = pos3 - pos3_last;
+	pos4_diff = pos4 - pos4_last;
+	speed1 = pos1_diff/PID_T;
+	speed2 = pos2_diff/PID_T;
+	speed3 = pos3_diff/PID_T;
+	speed4 = pos4_diff/PID_T;
+	//sei();
+
+	diff_left_m = (pos1_diff + pos2_diff)/(2*STEP_PER_M);
+	diff_right_m = (pos3_diff + pos4_diff)/(2*STEP_PER_M);
+	angle_diff = (diff_right_m - diff_left_m) / WHEEL_DIST;
+
+	//cli();
+	angle.f+=angle_diff;
+	if (angle.f > 2*M_PI) angle.f-=2*M_PI;
+	else if (angle.f < 2*M_PI) angle.f+=2*M_PI;
+	//sei();
+	
+	//cli();
+	translation = (diff_left_m + diff_right_m)/2.0;
+	pos_x.f += cos(angle.f)*translation;
+	pos_y.f += sin(angle.f)*translation;
+	//sei();
+
+	pos1_last = pos1;
+	pos2_last = pos2;
+	pos3_last = pos3;
+	pos4_last = pos4;
+}
+
+
+static void update_pid(void) {
 	static int16_t eold1=0;
 	static int16_t eold2=0;
 	static int16_t eold3=0;
@@ -506,22 +772,13 @@ void update_pid(void) {
 	static int32_t esum3=0;
 	static int32_t esum4=0;
 
-	speed1 = (pos1 - pos1_last)/TIMER1_T;
-	pos1_last = pos1;
-	speed2 = (pos2 - pos2_last)/TIMER1_T;
-	pos2_last = pos2;
-	speed3 = (pos3 - pos3_last)/TIMER1_T;
-	pos3_last = pos3;
-	speed4 = (pos4 - pos4_last)/TIMER1_T;
-	pos4_last = pos4;
-
 	if (motor1_mode == MOTOR_PID) {
 		if (speed1_wish == 0) {
 			motor1 = 0;
 		} else {
 			int16_t e = speed1_wish - speed1;
 			esum1+=e;
-			motor1 += KP*e + KI*TIMER1_T*esum1 + KD/TIMER1_T*(e - eold1);
+			motor1 += KP*e + KI*PID_T*esum1 + KD/PID_T*(e - eold1);
 			eold1 = e;
 
                         if (motor1 > 255) motor1 = 255;
@@ -534,7 +791,7 @@ void update_pid(void) {
 		} else {
 			int16_t e = speed2_wish - speed2;
 			esum2+=e;
-			motor2 += KP*e + KI*TIMER1_T*esum2 + KD/TIMER1_T*(e - eold2);
+			motor2 += KP*e + KI*PID_T*esum2 + KD/PID_T*(e - eold2);
 			eold2 = e;
 
                         if (motor2 > 255) motor2 = 255;
@@ -547,7 +804,7 @@ void update_pid(void) {
 		} else {
 			int16_t e = speed3_wish - speed3;
 			esum3+=e;
-			motor3 += KP*e + KI*TIMER1_T*esum3 + KD/TIMER1_T*(e - eold3);
+			motor3 += KP*e + KI*PID_T*esum3 + KD/PID_T*(e - eold3);
 			eold3 = e;
 
                         if (motor3 > 255) motor3 = 255;
@@ -560,7 +817,7 @@ void update_pid(void) {
 		} else {
 			int16_t e = speed4_wish - speed4;
 			esum4+=e;
-			motor4 += KP*e + KI*TIMER1_T*esum4 + KD/TIMER1_T*(e - eold4);
+			motor4 += KP*e + KI*PID_T*esum4 + KD/PID_T*(e - eold4);
 			eold4 = e;
 
                         if (motor4 > 255) motor4 = 255;
@@ -576,7 +833,7 @@ ISR(TIMER1_OVF_vect) {
 	update_hall3();
 	update_hall4();
 	
-	run_pid++;
+	run_update++;
 }
 
 
@@ -635,12 +892,13 @@ int main(void) {
 		}
 		
 
-		if (run_pid >= 156) { // ~100Hz
-			run_pid=0;
-			update_pid();
-		}
+		if (run_update >= 156) { // ~100Hz
+			run_update=0;
 
-		update_motor();
+			update_pos();
+			update_pid();
+			update_motor();
+		}
 
 		sleep_mode();
 	}
