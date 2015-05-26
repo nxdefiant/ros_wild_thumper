@@ -120,7 +120,6 @@ static volatile struct {
 	uint8_t bUpdate;
 } cmd_vel = {0, 0, 0};
 
-static volatile uint8_t test=0;
 static volatile uint8_t ireg=0;
 static volatile uint8_t bootloader=0;
 static volatile int16_t motor1=0; // -255..+255
@@ -546,8 +545,7 @@ ISR(TWI_vect)
 					TWI_ACK;
 					break;
 				case 0x94: // TLE Error status
-					//TWDR = (PIND & 0x40)>>2 | (PINB & 0x07);
-					TWDR=test;
+					TWDR = ~((PIND & 0x40)>>3 | (PINB & 0x07)) & 0xf;
 					TWI_ACK;
 					break;
 				default:
@@ -935,7 +933,6 @@ int main(void) {
 			update_pos();
 			update_pid();
 			update_motor();
-			test++;
 		}
 
 		sleep_mode();
