@@ -18,6 +18,8 @@
  * 0x06 Distance forward LSB
  * 0x07 Distance backward MSB
  * 0x08 Distance backward LSB
+ * 0x09 Voltage MSB
+ * 0x0A Voltage LSB
  *
  * 0xff Bootloader
  */
@@ -35,6 +37,7 @@ static volatile uint16_t dist_forward=0;
 static volatile uint16_t dist_backward=0;
 static volatile uint8_t start_dist_fwd=0;
 static volatile uint8_t start_dist_bwd=0;
+static volatile uint16_t voltage=0;
 
 ISR(TWI_vect)
 {
@@ -103,6 +106,15 @@ ISR(TWI_vect)
 					TWDR = tmp16;
 					TWI_ACK;
 					break;
+				case 0x09: // Voltage MSB
+					tmp16 = voltage;
+					TWDR = tmp16>>8;
+					TWI_ACK;
+					break;
+				case 0x0A: // Voltage LSB
+					TWDR = tmp16;
+					TWI_ACK;
+					break;
 				default:
 					TWDR = 0;
 					TWI_NAK;
@@ -156,6 +168,11 @@ uint16_t ReadChannel(uint8_t mux) {
 
 static unsigned short get_distance(uint8_t i) {
 	return ReadChannel(i);
+}
+
+
+static unsigned short get_voltage(void) {
+	return ReadChannel(2)*1.46;
 }
 
 
@@ -220,6 +237,9 @@ int main(void) {
 				break;
 			case 0x03: // ir right
 				dist_right = get_distance(1);
+				break;
+			case 0x09: // voltage
+				voltage = get_voltage();
 				break;
 			case 0xff: // Magic reg that starts the bootloader
 				if (bootloader == 0xa5) {
