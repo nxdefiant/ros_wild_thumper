@@ -87,6 +87,8 @@
  * 0x91 Motor 2 switch
  * 0x92 Motor 3 switch
  * 0x93 Motor 4 switch
+ * 0x94 Front Handicap
+ * 0x95 Aft Handicap
  * free
  * 0xA0 Reset reason
  * 0xA1 TLE Error status
@@ -156,6 +158,8 @@ static volatile ufloat_t angle={0.0};
 static volatile float cur_speed_lin=0;
 static volatile float cur_speed_rot=0;
 static volatile uint8_t count_test=0;
+static volatile uint8_t front_handicap=0;
+static volatile uint8_t aft_handicap=0;
 
 ISR(TWI_vect)
 {
@@ -338,6 +342,14 @@ ISR(TWI_vect)
 					break;
 				case 0x93: // Motor 4 switch
 					motor4_switch = TWDR;
+					TWI_ACK;
+					break;
+				case 0x94: // Front Handicap
+					front_handicap = TWDR;
+					TWI_ACK;
+					break;
+				case 0x95: // Aft Handicap
+					aft_handicap = TWDR;
 					TWI_ACK;
 					break;
 				case 0xff: // bootloader
@@ -948,10 +960,10 @@ int main(void) {
 			speed_wish_left*=STEP_PER_M;
 			speed_wish_right*=STEP_PER_M;
 
-			speed1_wish = speed_wish_left;
-			speed2_wish = speed_wish_left;
-			speed3_wish = speed_wish_right;
-			speed4_wish = speed_wish_right;
+			speed1_wish = speed_wish_left * (100-aft_handicap)/100.0;
+			speed2_wish = speed_wish_left * (100-front_handicap)/100.0;
+			speed3_wish = speed_wish_right * (100-front_handicap)/100.0;
+			speed4_wish = speed_wish_right * (100-aft_handicap)/100.0;
 			motor1_mode = MOTOR_PID;
 			motor2_mode = MOTOR_PID;
 			motor3_mode = MOTOR_PID;
