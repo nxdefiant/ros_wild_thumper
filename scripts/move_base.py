@@ -9,6 +9,7 @@ from math import *
 from geometry_msgs.msg import Twist
 from nav_msgs.msg import Odometry
 from diagnostic_msgs.msg import DiagnosticArray, DiagnosticStatus, KeyValue
+from sensor_msgs.msg import Imu
 
 WHEEL_DIST = 0.248
 
@@ -16,6 +17,7 @@ class MoveBase:
 	def __init__(self):
 		rospy.init_node('wild_thumper_move_base')
 		rospy.Subscriber("cmd_vel", Twist, self.cmdVelReceived)
+		rospy.Subscriber("imu", Imu, self.imuReceived)
 		self.tf_broadcaster = tf.broadcaster.TransformBroadcaster()
 		self.pub_odom = rospy.Publisher("odom", Odometry, queue_size=16)
 		self.pub_diag = rospy.Publisher("diagnostics", DiagnosticArray, queue_size=16)
@@ -38,6 +40,22 @@ class MoveBase:
 			#self.get_dist_left()
 			#self.get_dist_right()
 			rate.sleep()
+
+	def set_motor_handicap(self, front, aft): # percent
+		i2c_write_reg(0x50, 0x94, struct.pack(">bb", front, aft))
+
+	def imuReceived(self, msg):
+		(roll, pitch, yaw) = tf.transformations.euler_from_quaternion(msg.orientation.__getstate__())
+		if pitch > 30*pi/180:
+			val = (100/90)*abs(pitch)*180/pi
+			print "aft handicap", val
+			self.set_motor_handicap(0, val)
+		elif pitch < -30*pi/180:
+			val = (100/90)*abs(pitch)*180/pi
+			print "front handicap", val
+			self.set_motor_handicap(val, 0)
+		else:
+			self.set_motor_handicap(0, 0)
 
 	def get_reset(self):
 		reset = struct.unpack(">B", i2c_read_reg(0x50, 0xA0, 1))[0]
@@ -69,10 +87,10 @@ class MoveBase:
 		stat.level = DiagnosticStatus.ERROR if err else DiagnosticStatus.OK
 		stat.message = "0x%02x" % err
 
-		stat.values.append(KeyValue("Motor 1", str(bool(err & (1 << 0)))))
-		stat.values.append(KeyValue("Motor 2", str(bool(err & (1 << 1)))))
-		stat.values.append(KeyValue("Motor 3", str(bool(err & (1 << 2)))))
-		stat.values.append(KeyValue("Motor 4", str(bool(err & (1 << 3)))))
+		stat.values.append(KeyValue("aft left", str(bool(err & (1 << 0)))))
+		stat.values.append(KeyValue("front left", str(bool(err & (1 << 1)))))
+		stat.values.append(KeyValue("front right", str(bool(err & (1 << 2)))))
+		stat.values.append(KeyValue("aft right", str(bool(err & (1 << 3)))))
 
 		msg.status.append(stat)
 		self.pub_diag.publish(msg)
@@ -84,7 +102,7 @@ class MoveBase:
 		msg.header.stamp = rospy.Time.now()
 		stat = DiagnosticStatus()
 		stat.name = "Voltage"
-		stat.level = DiagnosticStatus.ERROR if volt < 6 else DiagnosticStatus.OK
+		stat.level = DiagnosticStatus.ERROR if volt < 7 else DiagnosticStatus.OK
 		stat.message = "%.2fV" % volt
 
 		msg.status.append(stat)
