@@ -545,19 +545,19 @@ ISR(TWI_vect)
 					TWI_ACK;
 					break;
 				case 0x48: // Position angle MSB
-					TWDR = pos_y.i>>24;
+					TWDR = angle.i>>24;
 					TWI_ACK;
 					break;
 				case 0x49: // Position angle
-					TWDR = pos_y.i>>16;
+					TWDR = angle.i>>16;
 					TWI_ACK;
 					break;
 				case 0x4A: // Position angle
-					TWDR = pos_y.i>>8;
+					TWDR = angle.i>>8;
 					TWI_ACK;
 					break;
 				case 0x4B: // Position angle LSB
-					TWDR = pos_y.i;
+					TWDR = angle.i;
 					TWI_ACK;
 					break;
 				case 0xA0: // Reset reason
