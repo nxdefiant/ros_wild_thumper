@@ -346,10 +346,12 @@ ISR(TWI_vect)
 					break;
 				case 0x94: // Front Handicap backward
 					front_handicap_bwd = TWDR;
+					cmd_vel.bUpdate = 1;
 					TWI_ACK;
 					break;
 				case 0x95: // Aft Handicap forward
 					aft_handicap_fwd = TWDR;
+					cmd_vel.bUpdate = 1;
 					TWI_ACK;
 					break;
 				case 0xff: // bootloader
@@ -963,22 +965,22 @@ int main(void) {
 			speed_wish_left*=STEP_PER_M;
 			speed_wish_right*=STEP_PER_M;
 
-			if (speed1_wish > 0 && aft_handicap_fwd > 0) {
+			if (speed_wish_left > 0 && aft_handicap_fwd > 0) {
 				speed1_wish = speed_wish_left * (100-aft_handicap_fwd)/100.0;
 			} else {
 				speed1_wish = speed_wish_left;
 			}
-			if (speed2_wish > 0 && front_handicap_bwd > 0) {
+			if (speed_wish_left < 0 && front_handicap_bwd > 0) {
 				speed2_wish = speed_wish_left * (100-front_handicap_bwd)/100.0;
 			} else {
 				speed2_wish = speed_wish_left;
 			}
-			if (speed3_wish > 0 && front_handicap_bwd > 0) {
+			if (speed_wish_right < 0 && front_handicap_bwd > 0) {
 				speed3_wish = speed_wish_right * (100-front_handicap_bwd)/100.0;
 			} else {
 				speed3_wish = speed_wish_right;
 			}
-			if (speed4_wish > 0 && aft_handicap_fwd > 0) {
+			if (speed_wish_right > 0 && aft_handicap_fwd > 0) {
 				speed4_wish = speed_wish_right * (100-aft_handicap_fwd)/100.0;
 			} else {
 				speed4_wish = speed_wish_right;
