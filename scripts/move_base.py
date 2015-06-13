@@ -24,6 +24,7 @@ class MoveBase:
 		self.set_speed(0, 0)
 		rospy.loginfo("Init done")
 		i2c_write_reg(0x50, 0x90, struct.pack("BB", 1, 1)) # switch direction
+		self.handicap_last = (-1, -1)
 		self.run()
 	
 	def run(self):
@@ -42,18 +43,18 @@ class MoveBase:
 			rate.sleep()
 
 	def set_motor_handicap(self, front, aft): # percent
-		i2c_write_reg(0x50, 0x94, struct.pack(">bb", front, aft))
+		if self.handicap_last != (front, aft):
+			i2c_write_reg(0x50, 0x94, struct.pack(">bb", front, aft))
+			self.handicap_last = (front, aft)
 
 	def imuReceived(self, msg):
 		(roll, pitch, yaw) = tf.transformations.euler_from_quaternion(msg.orientation.__getstate__())
 		if pitch > 30*pi/180:
-			val = (100/90)*abs(pitch)*180/pi
-			print "aft handicap", val
-			self.set_motor_handicap(0, val)
+			val = (100.0/65)*abs(pitch)*180/pi
+			self.set_motor_handicap(0, int(val))
 		elif pitch < -30*pi/180:
-			val = (100/90)*abs(pitch)*180/pi
-			print "front handicap", val
-			self.set_motor_handicap(val, 0)
+			val = (100.0/65)*abs(pitch)*180/pi
+			self.set_motor_handicap(int(val), 0)
 		else:
 			self.set_motor_handicap(0, 0)
 
