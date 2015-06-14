@@ -106,7 +106,7 @@
 #define KI 0.051429
 #define KD 0.000378
 #define PID_T 0.01
-#define STEP_PER_M 3376.1 // wheel diameter=12cm, encoder=48cpr, gear ratio=1:34
+#define STEP_PER_M 4171.4 // wheel diameter=12cm, encoder=48cpr, gear ratio=1:34
 #define WHEEL_DIST 0.252
 
 enum mode {
@@ -778,7 +778,7 @@ static void update_pos(void) {
 
 	angle_new = angle.f + angle_diff;
 	if (angle_new > 2*M_PI) angle_new-=2*M_PI;
-	else if (angle_new < 2*M_PI) angle_new+=2*M_PI;
+	else if (angle_new < -2*M_PI) angle_new+=2*M_PI;
 
 	translation = (diff_left_m + diff_right_m)/2.0;
 	pos_x_new = pos_x.f + cos(angle_new)*translation;
