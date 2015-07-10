@@ -188,7 +188,7 @@ class MoveBase:
 		dev.close()
 
 		val = struct.unpack(">H", s)[0]
-		return 15221/(val - -276.42)/100;
+		return val
 	
 	def get_dist_srf(self, num):
 		dev = i2c(0x52)
@@ -217,13 +217,13 @@ class MoveBase:
 
 	def get_dist_left(self):
 		if self.pub_range_left.get_num_connections() > 0:
-			dist = self.get_dist_ir(0x1)
-			self.send_range(self.pub_range_left, "ir_left", Range.INFRARED, dist, 0.1, 0.8, 5)
+			dist = 30.553/(self.get_dist_ir(0x1) - -67.534)
+			self.send_range(self.pub_range_left, "ir_left", Range.INFRARED, dist, 0.04, 0.3, 5)
 
 	def get_dist_right(self):
 		if self.pub_range_right.get_num_connections() > 0:
-			dist = self.get_dist_ir(0x3)
-			self.send_range(self.pub_range_right, "ir_right", Range.INFRARED, dist, 0.1, 0.8, 5)
+			dist = 17.4/(self.get_dist_ir(0x3) - 69)
+			self.send_range(self.pub_range_right, "ir_right", Range.INFRARED, dist, 0.04, 0.3, 5)
 
 	def get_dist_forward(self):
 		if self.pub_range_fwd.get_num_connections() > 0:
