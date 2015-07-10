@@ -135,7 +135,7 @@ uint16_t ReadChannel(uint8_t mux) {
 	// setzen auf 8 (1) und ADC aktivieren (1)
 
 	ADMUX = mux;                      // Kanal waehlen
-	ADMUX |= (1<<REFS1) | (1<<REFS0); // interne Referenzspannung nutzen 
+	ADMUX |= (1<<REFS0);
 
 	/* nach Aktivieren des ADC wird ein "Dummy-Readout" empfohlen, man liest
 	   also einen Wert und verwirft diesen, um den ADC "warmlaufen zu lassen" */
