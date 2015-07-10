@@ -9,7 +9,7 @@ from math import *
 from geometry_msgs.msg import Twist
 from nav_msgs.msg import Odometry
 from diagnostic_msgs.msg import DiagnosticArray, DiagnosticStatus, KeyValue
-from sensor_msgs.msg import Imu
+from sensor_msgs.msg import Imu, Range
 
 WHEEL_DIST = 0.248
 
@@ -25,6 +25,10 @@ class MoveBase:
 			self.tf_broadcaster = None
 		self.pub_odom = rospy.Publisher("odom", Odometry, queue_size=16)
 		self.pub_diag = rospy.Publisher("diagnostics", DiagnosticArray, queue_size=16)
+		self.pub_range_fwd = rospy.Publisher("range_forward", Range, queue_size=16)
+		self.pub_range_bwd = rospy.Publisher("range_backward", Range, queue_size=16)
+		self.pub_range_left = rospy.Publisher("range_left", Range, queue_size=16)
+		self.pub_range_right = rospy.Publisher("range_right", Range, queue_size=16)
 		self.set_speed(0, 0)
 		rospy.loginfo("Init done")
 		i2c_write_reg(0x50, 0x90, struct.pack("BB", 1, 1)) # switch direction
@@ -40,10 +44,10 @@ class MoveBase:
 			self.get_tle_err()
 			self.get_odom()
 			self.get_voltage()
-			#self.get_dist_forward()
-			#self.get_dist_backward()
-			#self.get_dist_left()
-			#self.get_dist_right()
+			self.get_dist_forward()
+			self.get_dist_backward()
+			self.get_dist_left()
+			self.get_dist_right()
 			rate.sleep()
 
 	def set_motor_handicap(self, front, aft): # percent
@@ -200,18 +204,37 @@ class MoveBase:
 
 		return struct.unpack(">H", s)[0]/1000.0
 
+	def send_range(self, pub, frame_id, typ, dist, min_range, max_range, fov_deg):
+		msg = Range()
+		msg.header.stamp = rospy.Time.now()
+		msg.header.frame_id = frame_id
+		msg.radiation_type = typ
+		msg.field_of_view = fov_deg*pi/180
+		msg.min_range = min_range
+		msg.max_range = max_range
+		msg.range = dist
+		pub.publish(msg)
+
 	def get_dist_left(self):
-		dist = self.get_dist_ir(0x1)
+		if self.pub_range_left.get_num_connections() > 0:
+			dist = self.get_dist_ir(0x1)
+			self.send_range(self.pub_range_left, "ir_left", Range.INFRARED, dist, 0.1, 0.8, 5)
 
 	def get_dist_right(self):
-		 dist = self.get_dist_ir(0x3)
+		if self.pub_range_right.get_num_connections() > 0:
+			dist = self.get_dist_ir(0x3)
+			self.send_range(self.pub_range_right, "ir_right", Range.INFRARED, dist, 0.1, 0.8, 5)
 
 	def get_dist_forward(self):
-		dist = self.get_dist_srf(0x5)
+		if self.pub_range_fwd.get_num_connections() > 0:
+			dist = self.get_dist_srf(0x5)
+			self.send_range(self.pub_range_fwd, "sonar_forward", Range.ULTRASOUND, dist, 0.04, 6, 60)
 
 	def get_dist_backward(self):
-		dist = self.get_dist_srf(0x7)
-
+		if self.pub_range_bwd.get_num_connections() > 0:
+			dist = self.get_dist_srf(0x7)
+			self.send_range(self.pub_range_bwd, "sonar_backward", Range.ULTRASOUND, dist, 0.04, 6, 60)
+		
 
 if __name__ == "__main__":
 	MoveBase()

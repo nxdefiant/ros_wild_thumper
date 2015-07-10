@@ -5,7 +5,7 @@
 
 	<link name="base_link">
 		<visual>
-			<origin xyz="0.09 -0.02 0.07" rpy="${PI} 0 ${-PI/2}"/>
+			<origin xyz="0.09 -0.022 0.07" rpy="${PI} 0 ${-PI/2}"/>
 			<geometry>
 				<mesh filename="package://wild_thumper/meshes/wild_thumper_assembly_corrected.stl" scale="0.001 0.001 0.001" />
 			</geometry>
@@ -38,6 +38,54 @@
 		<origin xyz="0.107 0.0 0.04" rpy="0 0 0"/>
 	</xacro:asus_camera>
 
+	<link name="sonar_forward">
+		<visual>
+			<geometry>
+				<box size="0.016 0.044 0.02"/>
+			</geometry>
+			<origin xyz="${0.016/2} 0 0" rpy="0 0 0"/>
+			<material name="green">
+				<color rgba="0 1 0 0.8"/>
+			</material>
+		</visual>
+	</link>
+
+	<link name="sonar_backward">
+		<visual>
+			<geometry>
+				<box size="0.016 0.044 0.02"/>
+			</geometry>
+			<origin xyz="${0.016/2} 0 0" rpy="0 0 0"/>
+			<material name="green">
+				<color rgba="0 1 0 0.8"/>
+			</material>
+		</visual>
+	</link>
+
+	<link name="ir_left">
+		<visual>
+			<geometry>
+				<box size="0.015 0.015 0.046"/>
+			</geometry>
+			<origin xyz="${-0.015/2} 0 0" rpy="0 0 0"/>
+			<material name="black">
+				<color rgba="0 0 0 1"/>
+			</material>
+		</visual>
+	</link>
+
+	<link name="ir_right">
+		<visual>
+			<geometry>
+				<box size="0.015 0.015 0.046"/>
+			</geometry>
+			<origin xyz="${-0.015/2} 0 0" rpy="0 0 0"/>
+			<material name="black">
+				<color rgba="0 0 0 1"/>
+			</material>
+		</visual>
+	</link>
+
 	<joint name="imu_joint" type="fixed">
 		<parent link="base_link"/>
 		<child link="base_imu_link"/>
@@ -48,5 +96,29 @@
 		<parent link="base_footprint"/>
 		<child link="base_link"/>
 		<origin xyz="0.0 0.0 0.13" rpy="0 0 0"/>
+	</joint>
+
+	<joint name="sonar_forward_joint" type="fixed">
+		<parent link="base_link"/>
+		<child link="sonar_forward"/>
+		<origin xyz="0.115 0.0 -0.012" rpy="0 0 0"/>
+	</joint>
+
+	<joint name="sonar_backward_joint" type="fixed">
+		<parent link="base_link"/>
+		<child link="sonar_backward"/>
+		<origin xyz="-0.115 0.0 -0.012" rpy="0 ${PI} 0"/>
+	</joint>
+
+	<joint name="ir_left_joint" type="fixed">
+		<parent link="base_link"/>
+		<child link="ir_left"/>
+		<origin xyz="0.0 ${0.072+0.015} -0.045" rpy="0 0 ${PI/2}"/>
+	</joint>
+
+	<joint name="ir_right_joint" type="fixed">
+		<parent link="base_link"/>
+		<child link="ir_right"/>
+		<origin xyz="0.0 ${-0.072-0.015} -0.045" rpy="0 0 ${-PI/2}"/>
 	</joint>
 </robot>
