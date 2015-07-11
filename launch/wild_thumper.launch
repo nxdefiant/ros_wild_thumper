@@ -1,5 +1,7 @@
 <?xml version="1.0"?>
 <launch>
+	<arg name="use_imu" default="true" />
+
 	<param name="robot_description" command="$(find xacro)/xacro.py $(find wild_thumper)/urdf/wild_thumper.urdf.xacro" />
 
 	<node name="robot_state_publisher" pkg="robot_state_publisher" type="state_publisher" />
@@ -8,16 +10,18 @@
 		<rosparam command="load" file="$(find wild_thumper)/cfg/analyzers.yaml" />
 	</node>
 
-	<node pkg="wild_thumper" type="move_base.py" name="move_base" output="screen" respawn="true">
-		<param name="enable_odom_tf" value="false" />
+	<node pkg="wild_thumper" type="wt_node.py" name="wild_thumper" output="screen" respawn="true">
+		<param name="enable_odom_tf" value="true" unless="$(arg use_imu)" />
+		<param name="enable_odom_tf" value="false" if="$(arg use_imu)" />
 	</node>
 
-	<node pkg="razor_imu_9dof" type="imu_node.py" name="imu_node" output="screen">
+	<node pkg="razor_imu_9dof" type="imu_node.py" name="imu_node" output="screen" if="$(arg use_imu)">
 		<rosparam file="$(find wild_thumper)/cfg/razor.yaml" command="load"/>
 	</node>
 
-	<node pkg="robot_pose_ekf" type="robot_pose_ekf" name="robot_pose_ekf" output="screen">
+	<node pkg="robot_pose_ekf" type="robot_pose_ekf" name="robot_pose_ekf" output="screen" if="$(arg use_imu)">
 		<remap from="imu_data" to="imu"/>
+		<remap from="robot_pose_ekf/odom_combined" to="odom_combined"/>
 		<param name="output_frame" value="odom"/>
 		<param name="freq" value="20.0"/>
 		<param name="vo_used" value="false"/>
