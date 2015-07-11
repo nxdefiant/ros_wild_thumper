@@ -1,0 +1,33 @@
+<?xml version="1.0"?>
+<launch>
+	<arg name="slam_gmapping" default="false" />
+	<arg name="map_file" default="$(find wild_thumper)/data/map.yaml" />
+
+	<!-- Run the map server -->
+	<node name="map_server" pkg="map_server" type="map_server" args="$(arg map_file)" unless="$(arg slam_gmapping)" />
+
+	<!-- Run AMCL -->
+	<include file="$(find amcl)/examples/amcl_diff.launch" unless="$(arg slam_gmapping)" />
+	<param name="amcl/base_frame_id" value="base_footprint" />
+
+	<node pkg="gmapping" type="slam_gmapping" name="slap_gmapping" output="screen" if="$(arg slam_gmapping)">
+		<param name="scan" value="scan" />
+		<param name="delta" value="0.01" />
+		<param name="map_update_interval" value="30" />
+		<param name="linearUpdate" value="0.5" />
+		<param name="angularUpdate" value="0.25" />
+		<param name="xmin" value="-1.0"/>
+		<param name="ymin" value="-1.0"/>
+		<param name="xmax" value="1.0"/>
+		<param name="ymax" value="1.0"/>
+		<param name="odom_frame" value="odom"/>
+	</node>
+
+	<node pkg="move_base" type="move_base" respawn="false" name="move_base" output="screen" unless="$(arg slam_gmapping)">
+		<rosparam file="$(find wild_thumper)/config/costmap_common_params.yaml" command="load" ns="global_costmap" />
+		<rosparam file="$(find wild_thumper)/config/costmap_common_params.yaml" command="load" ns="local_costmap" />
+		<rosparam file="$(find wild_thumper)/config/global_costmap_params.yaml" command="load" />
+		<rosparam file="$(find wild_thumper)/config/local_costmap_params.yaml" command="load" />
+		<rosparam file="$(find wild_thumper)/config/base_local_planner_params.yaml" command="load" />
+	</node>
+</launch>
