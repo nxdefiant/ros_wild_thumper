@@ -7,7 +7,7 @@
 	</include>
 
 	<node pkg="nodelet" type="nodelet" name="depthimage_to_laserscan" args="load depthimage_to_laserscan/DepthImageToLaserScanNodelet /camera/camera_nodelet_manager" output="screen">
-		<remap from="/camera/image" to="/camera/depth/image_raw"/>
+		<remap from="/camera/image" to="/camera/depth/image"/>
 		<remap from="/camera/scan" to="/scan"/>
 	</node>
 </launch>

@@ -15,7 +15,7 @@ WHEEL_DIST = 0.248
 
 class MoveBase:
 	def __init__(self):
-		rospy.init_node('wild_thumper_move_base')
+		rospy.init_node('wild_thumper')
 		rospy.Subscriber("cmd_vel", Twist, self.cmdVelReceived)
 		rospy.Subscriber("imu", Imu, self.imuReceived)
 		enable_odom_tf = rospy.get_param("~enable_odom_tf", True)
@@ -133,7 +133,7 @@ class MoveBase:
 		# next, we'll publish the odometry message over ROS
 		odom = Odometry()
 		odom.header.stamp = current_time
-		odom.header.frame_id = "/odom"
+		odom.header.frame_id = "odom"
 
 		# set the position
 		odom.pose.pose.position.x = posx
