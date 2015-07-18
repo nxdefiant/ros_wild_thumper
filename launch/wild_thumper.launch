@@ -1,30 +1,41 @@
 <?xml version="1.0"?>
 <launch>
-	<arg name="use_imu" default="true" />
+	<arg name="use_imu" default="true"/>
 
-	<param name="robot_description" command="$(find xacro)/xacro.py $(find wild_thumper)/urdf/wild_thumper.urdf.xacro" />
+	<param name="robot_description" command="$(find xacro)/xacro.py $(find wild_thumper)/urdf/wild_thumper.urdf.xacro"/>
 
-	<node name="robot_state_publisher" pkg="robot_state_publisher" type="state_publisher" />
+	<node pkg="robot_state_publisher" type="robot_state_publisher" name="robot_state_publisher" output="screen"/>
 
-	<node pkg="diagnostic_aggregator" type="aggregator_node" name="diagnostic_aggregator" >
-		<rosparam command="load" file="$(find wild_thumper)/cfg/analyzers.yaml" />
+	<node pkg="diagnostic_aggregator" type="aggregator_node" name="diagnostic_aggregator" output="screen">
+		<rosparam command="load" file="$(find wild_thumper)/cfg/analyzers.yaml"/>
 	</node>
 
 	<node pkg="wild_thumper" type="wt_node.py" name="wild_thumper" output="screen" respawn="true">
-		<param name="enable_odom_tf" value="true" unless="$(arg use_imu)" />
-		<param name="enable_odom_tf" value="false" if="$(arg use_imu)" />
+		<param name="enable_odom_tf" value="true" unless="$(arg use_imu)"/>
+		<param name="enable_odom_tf" value="false" if="$(arg use_imu)"/>
 	</node>
 
 	<node pkg="razor_imu_9dof" type="imu_node.py" name="imu_node" output="screen" if="$(arg use_imu)">
 		<rosparam file="$(find wild_thumper)/cfg/razor.yaml" command="load"/>
 	</node>
 
+	<node pkg="gpsd_client" type="gpsd_client"  name="gpsd_client" output="screen">
+		<param name="use_gps_time" value="false"/>
+	</node>
+
+	<node pkg="gps_common" type="utm_odometry_node" name="gps_conv">
+		<remap from="odom" to="odom_gps"/>
+		<param name="frame_id" value="base_footprint"/>
+	</node>
+
 	<node pkg="robot_pose_ekf" type="robot_pose_ekf" name="robot_pose_ekf" output="screen" if="$(arg use_imu)">
 		<remap from="imu_data" to="imu"/>
+		<remap from="vo" to="odom_gps"/>
 		<remap from="robot_pose_ekf/odom_combined" to="odom_combined"/>
 		<param name="output_frame" value="odom"/>
 		<param name="freq" value="20.0"/>
-		<param name="vo_used" value="false"/>
+		<param name="vo_used" value="true"/>
 		<param name="debug" value="true"/>
+		<param name="sensor_timeout" value="2.0"/>
 	</node>
 </launch>
