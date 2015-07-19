@@ -23,7 +23,7 @@
 		<param name="odom_frame" value="odom"/>
 	</node>
 
-	<node pkg="move_base" type="move_base" respawn="false" name="move_base" output="screen" unless="$(arg slam_gmapping)">
+	<node pkg="move_base" type="move_base" respawn="false" name="move_base" output="screen">
 		<rosparam file="$(find wild_thumper)/config/costmap_common_params.yaml" command="load" ns="global_costmap" />
 		<rosparam file="$(find wild_thumper)/config/costmap_common_params.yaml" command="load" ns="local_costmap" />
 		<rosparam file="$(find wild_thumper)/config/global_costmap_params.yaml" command="load" />
