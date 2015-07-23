@@ -10,4 +10,6 @@
 		<remap from="/camera/image" to="/camera/depth/image"/>
 		<remap from="/camera/scan" to="/scan"/>
 	</node>
+
+	<node pkg="dynamic_reconfigure" type="dynparam" name="reconfig" output="screen" args="set /camera/driver depth_mode 11" />
 </launch>
