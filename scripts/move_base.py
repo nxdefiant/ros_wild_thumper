@@ -18,7 +18,11 @@ class MoveBase:
 		rospy.init_node('wild_thumper_move_base')
 		rospy.Subscriber("cmd_vel", Twist, self.cmdVelReceived)
 		rospy.Subscriber("imu", Imu, self.imuReceived)
-		#self.tf_broadcaster = tf.broadcaster.TransformBroadcaster()
+		enable_odom_tf = rospy.get_param("~enable_odom_tf", True)
+		if enable_odom_tf:
+			self.tf_broadcaster = tf.broadcaster.TransformBroadcaster()
+		else:
+			self.tf_broadcaster = None
 		self.pub_odom = rospy.Publisher("odom", Odometry, queue_size=16)
 		self.pub_diag = rospy.Publisher("diagnostics", DiagnosticArray, queue_size=16)
 		self.set_speed(0, 0)
@@ -119,7 +123,8 @@ class MoveBase:
 		odom_quat = tf.transformations.quaternion_from_euler(0, 0, angle)
 
 		# first, we'll publish the transform over tf
-		#self.tf_broadcaster.sendTransform((posx, posy, 0.0), odom_quat, current_time, "base_footprint", "odom")
+		if self.tf_broadcaster is not None:
+			self.tf_broadcaster.sendTransform((posx, posy, 0.0), odom_quat, current_time, "base_footprint", "odom")
 
 		# next, we'll publish the odometry message over ROS
 		odom = Odometry()
@@ -136,9 +141,9 @@ class MoveBase:
 		odom.pose.pose.orientation.w = odom_quat[3]
 		odom.pose.covariance[0] = 1e-3 # x
 		odom.pose.covariance[7] = 1e-3 # y
-		odom.pose.covariance[14] = 1e-3 # z
-		odom.pose.covariance[21] = 0.1 # rotation about X axis
-		odom.pose.covariance[28] = 0.1 # rotation about Y axis
+		odom.pose.covariance[14] = 1e6 # z
+		odom.pose.covariance[21] = 1e6 # rotation about X axis
+		odom.pose.covariance[28] = 1e6 # rotation about Y axis
 		odom.pose.covariance[35] = 0.1 # rotation about Z axis
 
 		# set the velocity
@@ -148,9 +153,9 @@ class MoveBase:
 		odom.twist.twist.angular.z = speed_rot
 		odom.twist.covariance[0] = 1e-3 # x
 		odom.twist.covariance[7] = 1e-3 # y
-		odom.twist.covariance[14] = 1e-3 # z
-		odom.twist.covariance[21] = 0.1 # rotation about X axis
-		odom.twist.covariance[28] = 0.1 # rotation about Y axis
+		odom.twist.covariance[14] = 1e6 # z
+		odom.twist.covariance[21] = 1e6 # rotation about X axis
+		odom.twist.covariance[28] = 1e6 # rotation about Y axis
 		odom.twist.covariance[35] = 0.1 # rotation about Z axis
 
 		# publish the message
