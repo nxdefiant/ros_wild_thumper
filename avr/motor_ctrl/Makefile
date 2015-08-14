@@ -90,7 +90,7 @@ EXTRAINCDIRS =
 CSTANDARD = -std=gnu99
 
 # Place -D or -U options here
-CDEFS = -DF_CPU=8000000
+CDEFS = -DF_CPU=4000000
 
 # Place -I options here
 CINCS = -Ii2c/

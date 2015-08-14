@@ -87,7 +87,10 @@
  * 0x91 Motor 2 switch
  * 0x92 Motor 3 switch
  * 0x93 Motor 4 switch
- * 0x94 TLE Error status
+ * free
+ * 0xA0 Reset reason
+ * 0xA1 TLE Error status
+ * 0xA2 count test
  * free
  * 0xff Bootloader
  */
@@ -142,7 +145,7 @@ static volatile int16_t speed1_wish=0; // step/s
 static volatile int16_t speed2_wish=0;
 static volatile int16_t speed3_wish=0;
 static volatile int16_t speed4_wish=0;
-static volatile uint16_t run_update=0;
+static volatile uint8_t run_update=0;
 static volatile int16_t speed1=0; // step/s
 static volatile int16_t speed2=0;
 static volatile int16_t speed3=0;
@@ -152,6 +155,7 @@ static volatile ufloat_t pos_y={0.0};
 static volatile ufloat_t angle={0.0};
 static volatile float cur_speed_lin=0;
 static volatile float cur_speed_rot=0;
+static volatile uint8_t count_test=0;
 
 ISR(TWI_vect)
 {
@@ -544,10 +548,18 @@ ISR(TWI_vect)
 					TWDR = pos_y.i;
 					TWI_ACK;
 					break;
-				case 0x94: // TLE Error status
+				case 0xA0: // Reset reason
+					TWDR = MCUCSR & 0x0f;
+					MCUCSR = 0x0;
+					TWI_ACK;
+					break;
+				case 0xA1: // TLE Error status
 					TWDR = ~((PIND & 0x40)>>3 | (PINB & 0x07)) & 0xf;
 					TWI_ACK;
 					break;
+				case 0xA2: // count test
+					TWDR = count_test;
+					TWI_ACK;
 				default:
 					TWDR = 0;
 					TWI_NAK;
@@ -722,20 +734,29 @@ static void update_pos(void) {
 	int16_t pos3_diff;
 	int16_t pos4_diff;
 	float diff_left_m, diff_right_m, angle_diff, translation;
-	float pos_x_diff, pos_y_diff, angle_new;
+	float pos_x_new, pos_y_new, angle_new;
 	int16_t speed_l, speed_r;
 	float tmp_speed_lin, tmp_speed_rot;
+	int16_t cur_pos1, cur_pos2, cur_pos3, cur_pos4;
+	int16_t new_speed1, new_speed2, new_speed3, new_speed4;
 
+	// copy to tmp
 	cli();
-	pos1_diff = pos1 - pos1_last;
-	pos2_diff = pos2 - pos2_last;
-	pos3_diff = pos3 - pos3_last;
-	pos4_diff = pos4 - pos4_last;
-	speed1 = pos1_diff/PID_T;
-	speed2 = pos2_diff/PID_T;
-	speed3 = pos3_diff/PID_T;
-	speed4 = pos4_diff/PID_T;
+	cur_pos1 = pos1;
+	cur_pos2 = pos2;
+	cur_pos3 = pos3;
+	cur_pos4 = pos4;
 	sei();
+
+	pos1_diff = cur_pos1 - pos1_last;
+	pos2_diff = cur_pos2 - pos2_last;
+	pos3_diff = cur_pos3 - pos3_last;
+	pos4_diff = cur_pos4 - pos4_last;
+
+	new_speed1 = pos1_diff/PID_T;
+	new_speed2 = pos2_diff/PID_T;
+	new_speed3 = pos3_diff/PID_T;
+	new_speed4 = pos4_diff/PID_T;
 
 	diff_left_m = (pos1_diff + pos2_diff)/(2*STEP_PER_M);
 	diff_right_m = (pos3_diff + pos4_diff)/(2*STEP_PER_M);
@@ -746,29 +767,31 @@ static void update_pos(void) {
 	else if (angle_new < 2*M_PI) angle_new+=2*M_PI;
 
 	translation = (diff_left_m + diff_right_m)/2.0;
-	pos_x_diff = cos(angle_new)*translation;
-	pos_y_diff = sin(angle_new)*translation;
-	
-	cli();
-	angle.f = angle_new;
-	pos_x.f += pos_x_diff;
-	pos_y.f += pos_y_diff;
-	sei();
+	pos_x_new = pos_x.f + cos(angle_new)*translation;
+	pos_y_new = pos_y.f + sin(angle_new)*translation;
 
-	speed_l = (speed1+speed2)/2;
-	speed_r = (speed3+speed4)/2;
+	speed_l = (new_speed1+new_speed2)/2;
+	speed_r = (new_speed3+new_speed4)/2;
 	tmp_speed_lin = (speed_l + speed_r)/(2.0*STEP_PER_M);
 	tmp_speed_rot = (speed_r - speed_l)/(M_PI*WHEEL_DIST*STEP_PER_M);
 
+	// copy from tmp
 	cli();
+	angle.f = angle_new;
+	pos_x.f = pos_x_new;
+	pos_y.f = pos_y_new;
+	speed1 = new_speed1;
+	speed2 = new_speed2;
+	speed3 = new_speed3;
+	speed4 = new_speed4;
 	cur_speed_lin = tmp_speed_lin;
 	cur_speed_rot = tmp_speed_rot;
 	sei();
 
-	pos1_last = pos1;
-	pos2_last = pos2;
-	pos3_last = pos3;
-	pos4_last = pos4;
+	pos1_last = cur_pos1;
+	pos2_last = cur_pos2;
+	pos3_last = cur_pos3;
+	pos4_last = cur_pos4;
 }
 
 
@@ -870,7 +893,7 @@ int main(void) {
 	TWI_RESET;
 
 	// Motor 1 & 2
-	// Timer 1: Fast PWM inverting mode, Top=256 => 31.25kHz
+	// Timer 1: Fast PWM inverting mode, Top=256 => 15.625kHz
 	// Prescaler=1
 	TCCR1A = (1 << COM1A1) | (1 << COM1B1) | (1 << COM1A0) | (1 << COM1B0) | (1 << WGM10);
 	TCCR1B = (1 << WGM12) | (1 << CS10);
@@ -910,10 +933,18 @@ int main(void) {
 		}
 
 		if (cmd_vel.bUpdate) {
-			float speed_wish_right = cmd_vel.angle*M_PI*WHEEL_DIST/2 + cmd_vel.speed;
-			float speed_wish_left = cmd_vel.speed*2-speed_wish_right;
+			float speed_wish_right, speed_wish_left;
+			float speed, angle;
 
+			cli();
+			speed = cmd_vel.speed;
+			angle = cmd_vel.angle;
 			cmd_vel.bUpdate = 0;
+			sei();
+
+			speed_wish_right = angle*M_PI*WHEEL_DIST/2 + speed;
+			speed_wish_left = speed*2-speed_wish_right;
+
 			speed_wish_left*=STEP_PER_M;
 			speed_wish_right*=STEP_PER_M;
 
@@ -927,12 +958,13 @@ int main(void) {
 			motor4_mode = MOTOR_PID;
 		}
 
-		if (run_update >= 312) { // ~100Hz
+		if (run_update >= 156) { // ~100Hz
 			run_update=0;
 
 			update_pos();
 			update_pid();
 			update_motor();
+			count_test++;
 		}
 
 		sleep_mode();
