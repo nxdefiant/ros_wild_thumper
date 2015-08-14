@@ -7,4 +7,8 @@
 	<node pkg="diagnostic_aggregator" type="aggregator_node" name="diagnostic_aggregator" >
 		<rosparam command="load" file="$(find wild_thumper)/cfg/analyzers.yaml" />
 	</node>
+
+	<node pkg="razor_imu_9dof" type="imu_node.py" name="imu_node" output="screen">
+		<rosparam file="$(find wild_thumper)/cfg/razor.yaml" command="load"/>
+	</node>
 </launch>
