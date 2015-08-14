@@ -3,7 +3,7 @@
 
 import rospy
 import struct
-from i2c import i2c
+from i2c import *
 from math import *
 from geometry_msgs.msg import Twist
 
@@ -15,6 +15,7 @@ class MoveBase:
 		rospy.Subscriber("cmd_vel", Twist, self.cmdVelReceived)
 		self.set_speed(0, 0)
 		rospy.loginfo("Init done")
+		i2c_write_reg(0x50, 0x90, struct.pack("BB", 1, 1)) # switch direction
 		self.run()
 	
 	def run(self):
@@ -37,8 +38,8 @@ class MoveBase:
 		if right > 255: right=255
 		elif right < -255: right=-255
 
-		dev = i2c(0x56)
-		s = struct.pack(">Bhh", 0x1, left, right)
+		dev = i2c(0x50)
+		s = struct.pack(">Bhhhh", 0x1, right, right, left, left)
 		dev.write(s)
 		dev.close()
 
