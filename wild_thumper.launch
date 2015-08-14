@@ -3,4 +3,8 @@
 	<param name="robot_description" command="$(find xacro)/xacro.py $(find wild_thumper)/urdf/wild_thumper.urdf.xacro" />
 
 	<node name="robot_state_publisher" pkg="robot_state_publisher" type="state_publisher" />
+
+	<node pkg="diagnostic_aggregator" type="aggregator_node" name="diagnostic_aggregator" >
+		<rosparam command="load" file="$(find wild_thumper)/cfg/analyzers.yaml" />
+	</node>
 </launch>

@@ -1,0 +1,6 @@
+analyzers:
+        motors:
+                type: GenericAnalyzer
+                path: Motors
+                startswith: 'Motor'
+                find_and_remove_prefix: motor

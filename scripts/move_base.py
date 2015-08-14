@@ -8,6 +8,7 @@ from i2c import *
 from math import *
 from geometry_msgs.msg import Twist
 from nav_msgs.msg import Odometry
+from diagnostic_msgs.msg import DiagnosticArray, DiagnosticStatus, KeyValue
 
 WHEEL_DIST = 0.248
 
@@ -17,6 +18,7 @@ class MoveBase:
 		rospy.Subscriber("cmd_vel", Twist, self.cmdVelReceived)
 		self.tf_broadcaster = tf.broadcaster.TransformBroadcaster()
 		self.pub_odom = rospy.Publisher("odom", Odometry, queue_size=16)
+		self.pub_diag = rospy.Publisher("diagnostics", DiagnosticArray, queue_size=16)
 		self.set_speed(0, 0)
 		rospy.loginfo("Init done")
 		i2c_write_reg(0x50, 0x90, struct.pack("BB", 1, 1)) # switch direction
@@ -25,12 +27,32 @@ class MoveBase:
 	def run(self):
 		rate = rospy.Rate(20.0)
 		while not rospy.is_shutdown():
+			self.get_tle_err()
 			#self.get_odom()
 			#self.get_dist_forward()
 			#self.get_dist_backward()
 			#self.get_dist_left()
 			#self.get_dist_right()
 			rate.sleep()
+
+	def get_tle_err(self):
+		err = struct.unpack(">B", i2c_read_reg(0x50, 0x94, 1))[0]
+		
+		msg = DiagnosticArray()
+		msg.header.stamp = rospy.Time.now()
+		stat = DiagnosticStatus()
+		stat.name = "Motor: Error Status"
+		stat.level = DiagnosticStatus.OK if not err else DiagnosticStatus.ERROR
+		stat.message = "OK" if not err else "Error"
+
+		stat.values.append(KeyValue("Motor 1", str(bool(err & (1 << 0)))))
+		stat.values.append(KeyValue("Motor 2", str(bool(err & (1 << 1)))))
+		stat.values.append(KeyValue("Motor 3", str(bool(err & (1 << 2)))))
+		stat.values.append(KeyValue("Motor 4", str(bool(err & (1 << 3)))))
+
+		msg.status.append(stat)
+		self.pub_diag.publish(msg)
+
 
 	def get_odom(self):
 		posx, posy, angle = struct.unpack(">fff", i2c_read_reg(0x50, 0x40, 12))
