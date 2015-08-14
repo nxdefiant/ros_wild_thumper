@@ -13,4 +13,12 @@
 	</node>
 
 	<node pkg="wild_thumper" type="move_base.py" name="move_base" output="screen" respawn="true" />
+
+	<node pkg="robot_pose_ekf" type="robot_pose_ekf" name="robot_pose_ekf" output="screen">
+		<remap from="imu_data" to="imu"/>
+		<param name="output_frame" value="odom"/>
+		<param name="freq" value="20.0"/>
+		<param name="vo_used" value="false"/>
+		<param name="debug" value="true"/>
+	</node>
 </launch>
