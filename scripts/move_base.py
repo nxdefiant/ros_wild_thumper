@@ -26,29 +26,66 @@ class MoveBase:
 	
 	def run(self):
 		rate = rospy.Rate(20.0)
+		reset_val = self.get_reset()
+		rospy.loginfo("Reset Status: 0x%x" % reset_val)
 		while not rospy.is_shutdown():
+			#print struct.unpack(">B", i2c_read_reg(0x50, 0xA2, 1))[0] # count test
 			self.get_tle_err()
-			#self.get_odom()
+			self.get_odom()
+			self.get_voltage()
 			#self.get_dist_forward()
 			#self.get_dist_backward()
 			#self.get_dist_left()
 			#self.get_dist_right()
 			rate.sleep()
 
+	def get_reset(self):
+		reset = struct.unpack(">B", i2c_read_reg(0x50, 0xA0, 1))[0]
+
+		msg = DiagnosticArray()
+		msg.header.stamp = rospy.Time.now()
+		stat = DiagnosticStatus()
+		stat.name = "Reset reason"
+		stat.level = DiagnosticStatus.ERROR if reset & 0x0c else DiagnosticStatus.OK
+		stat.message = "0x%02x" % reset
+
+		stat.values.append(KeyValue("Watchdog Reset Flag", str(bool(reset & (1 << 3)))))
+		stat.values.append(KeyValue("Brown-out Reset Flag", str(bool(reset & (1 << 2)))))
+		stat.values.append(KeyValue("External Reset Flag", str(bool(reset & (1 << 1)))))
+		stat.values.append(KeyValue("Power-on Reset Flag", str(bool(reset & (1 << 0)))))
+
+		msg.status.append(stat)
+		self.pub_diag.publish(msg)
+		return reset
+
+
 	def get_tle_err(self):
-		err = struct.unpack(">B", i2c_read_reg(0x50, 0x94, 1))[0]
+		err = struct.unpack(">B", i2c_read_reg(0x50, 0xA1, 1))[0]
 		
 		msg = DiagnosticArray()
 		msg.header.stamp = rospy.Time.now()
 		stat = DiagnosticStatus()
 		stat.name = "Motor: Error Status"
-		stat.level = DiagnosticStatus.OK if not err else DiagnosticStatus.ERROR
-		stat.message = "OK" if not err else "Error"
+		stat.level = DiagnosticStatus.ERROR if err else DiagnosticStatus.OK
+		stat.message = "0x%02x" % err
 
 		stat.values.append(KeyValue("Motor 1", str(bool(err & (1 << 0)))))
 		stat.values.append(KeyValue("Motor 2", str(bool(err & (1 << 1)))))
 		stat.values.append(KeyValue("Motor 3", str(bool(err & (1 << 2)))))
 		stat.values.append(KeyValue("Motor 4", str(bool(err & (1 << 3)))))
+
+		msg.status.append(stat)
+		self.pub_diag.publish(msg)
+	
+	def get_voltage(self):
+		volt = struct.unpack(">h", i2c_read_reg(0x52, 0x09, 2))[0]/100.0
+
+		msg = DiagnosticArray()
+		msg.header.stamp = rospy.Time.now()
+		stat = DiagnosticStatus()
+		stat.name = "Voltage"
+		stat.level = DiagnosticStatus.ERROR if volt < 6 else DiagnosticStatus.OK
+		stat.message = "%.2fV" % volt
 
 		msg.status.append(stat)
 		self.pub_diag.publish(msg)

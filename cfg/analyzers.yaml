@@ -4,3 +4,12 @@ analyzers:
                 path: Motors
                 startswith: 'Motor'
                 find_and_remove_prefix: motor
+        reset:
+                type: GenericAnalyzer
+                path: Reset
+                startswith: 'Reset'
+                timeout: -1
+        voltage:
+                type: GenericAnalyzer
+                path: Voltage
+                startswith: 'Voltage'
