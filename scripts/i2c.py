@@ -66,14 +66,14 @@ class i2c:
 
 def i2c_write_reg(addr, reg, buf):
 	dev = i2c(addr)
-	s = struct.pack("B", reg) + buf
+	s = struct.pack(">B", reg) + buf
 	dev.write(s)
 	dev.close()
 
 
 def i2c_read_reg(addr, reg, num=1):
 	dev = i2c(addr)
-	s = struct.pack("B", reg)
+	s = struct.pack(">B", reg)
 	dev.write(s)
 	s = dev.read(num)
 	dev.close()

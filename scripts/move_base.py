@@ -19,13 +19,19 @@ class MoveBase:
 		self.run()
 	
 	def run(self):
-		rate = rospy.Rate(10.0)
+		rate = rospy.Rate(20.0)
 		while not rospy.is_shutdown():
+			self.get_pos()
 			#self.get_dist_forward()
 			#self.get_dist_backward()
 			#self.get_dist_left()
 			#self.get_dist_right()
 			rate.sleep()
+
+	def get_pos(self):
+		s = i2c_read_reg(0x50, 0x10, 8)
+		hall1, hall2, hall3, hall4 = struct.unpack(">hhhh", s)
+		print hall1, hall2, hall3, hall4
 
 	def set_speed(self, left, right):
 		if left > 0: left+=80
@@ -38,10 +44,7 @@ class MoveBase:
 		if right > 255: right=255
 		elif right < -255: right=-255
 
-		dev = i2c(0x50)
-		s = struct.pack(">Bhhhh", 0x1, right, right, left, left)
-		dev.write(s)
-		dev.close()
+		i2c_write_reg(0x50, 0x1, struct.pack(">hhhh", right, right, left, left))
 
 	def cmdVelReceived(self, msg):
 		trans = msg.linear.x
