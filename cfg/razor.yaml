@@ -23,11 +23,11 @@ magn_z_max: 596
 
 # extended calibration
 calibration_magn_use_extended: true
-magn_ellipsoid_center: [45.6927, 172.209, 376.478]
-magn_ellipsoid_transform: [[0.994730, 0.00431208, -0.0112894], [0.00431208, 0.981610, 0.00532676], [-0.0112894, 0.00532676, 0.974786]]
+magn_ellipsoid_center: [-32.6801, 82.7799, 142.354]
+magn_ellipsoid_transform: [[0.993252, 0.00616743, -0.00945049], [0.00616743, 0.990730, -0.000356148], [-0.00945049, -0.000356148, 0.964502]]
 
 # AHRS to robot calibration
-imu_yaw_calibration: 0.0
+imu_yaw_calibration: 180.0
 
 ### gyroscope
 gyro_average_offset_x: -29.0
