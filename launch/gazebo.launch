@@ -1,0 +1,18 @@
+<?xml version="1.0"?>
+<launch>
+	<include file="$(find gazebo_ros)/launch/empty_world.launch" >
+		<arg name="world_name" value="$(find wild_thumper)/worlds/test.world" />
+		<arg name="gui" value="false" />
+	</include>
+
+	<param name="robot_description" command="$(find xacro)/xacro.py $(find wild_thumper)/urdf/wild_thumper.urdf.xacro"/>
+
+	<node pkg="robot_state_publisher" type="robot_state_publisher" name="robot_state_publisher" output="screen"/>
+
+	<!-- Spawn a robot into Gazebo -->
+	<node name="spawn_urdf" pkg="gazebo_ros" type="spawn_model" args="-param robot_description -urdf -model wild_thumper" output="screen" />
+
+	<node pkg="depthimage_to_laserscan" type="depthimage_to_laserscan" name="depthimage_to_laserscan" output="screen">
+		<remap from="/image" to="/camera/depth/image_raw"/>
+        </node>
+</launch>
