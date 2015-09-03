@@ -26,7 +26,7 @@
 			</geometry>
 		</visual>
 		<inertial>
-			<mass value="1.9"/>
+			<mass value="2.5"/>
 			<inertia ixx="1.0" ixy="0.0" ixz="0.0" iyy="1.0" iyz="0.0" izz="1.0"/>
 		</inertial>
 	</link>
@@ -170,47 +170,84 @@
 			<axis xyz="0 1 0"/>
 			<origin xyz="${xyz}" rpy="${rpy}"/>
 		</joint>
+
+		<transmission name="${pos}_${side}_wheel_trans" type="SimpleTransmission">
+			<type>transmission_interface/SimpleTransmission</type>
+			<joint name="${pos}_${side}_wheel_joint">
+				<hardwareInterface>VelocityJointInterface</hardwareInterface>
+			</joint>
+			<actuator name="{pos}_${side}_wheel_motor">
+				<hardwareInterface>VelocityJointInterface</hardwareInterface>
+				<mechanicalReduction>1</mechanicalReduction>
+			</actuator>
+		</transmission>
 	</xacro:macro>
 
-	<gazebo reference="front_left_wheel">
-		<dampingFactor>0.001</dampingFactor>
-	</gazebo>
-	<gazebo reference="front_right_wheel">
-		<dampingFactor>0.001</dampingFactor>
-	</gazebo>
-
-	<xacro:wheel pos="aft" side="left"  xyz="-0.06398 0.11407 -0.022446" rpy="0 0 0" />
-	<xacro:wheel pos="aft" side="right" xyz="-0.07397 -0.11408 -0.022446" rpy="0 0 0" />
-	<xacro:wheel pos="front" side="left"  xyz="0.07602 0.11407 -0.022446" rpy="0 0 0" />
-	<xacro:wheel pos="front" side="right" xyz="0.07397 -0.11408 -0.022446" rpy="0 0 0" />
+	<xacro:wheel pos="rear" side="left"  xyz="-0.06398 0.114 -0.022446" rpy="0 0 0" />
+	<xacro:wheel pos="rear" side="right" xyz="-0.07397 -0.114 -0.022446" rpy="0 0 0" />
+	<xacro:wheel pos="front" side="left"  xyz="0.07602 0.114 -0.022446" rpy="0 0 0" />
+	<xacro:wheel pos="front" side="right" xyz="0.07397 -0.114 -0.022446" rpy="0 0 0" />
 
 	<gazebo>
-		<plugin name="joint_state_publisher" filename="libgazebo_ros_joint_state_publisher.so">
+		<plugin name="gazebo_ros_control" filename="libgazebo_ros_control.so">
 			<robotNamespace>/</robotNamespace>
-			<jointName>aft_left_wheel_joint, aft_right_wheel_joint, front_left_wheel_joint, front_right_wheel_joint</jointName>
-			<updateRate>10.0</updateRate>
-			<alwaysOn>true</alwaysOn>
+			<robotSimType>gazebo_ros_control/DefaultRobotHWSim</robotSimType>
 		</plugin>
 
-		<plugin name="differential_drive_controller" filename="libgazebo_ros_diff_drive.so">
-			<robotNamespace>/</robotNamespace>
+		<plugin name="imu_controller" filename="libgazebo_ros_imu.so">
 			<alwaysOn>true</alwaysOn>
-			<updateRate>10.0</updateRate>
-			<leftJoint>aft_right_wheel_joint</leftJoint>
-			<rightJoint>aft_left_wheel_joint</rightJoint>
-			<wheelSeparation>0.252</wheelSeparation>
-			<wheelDiameter>0.12</wheelDiameter>
-			<wheelTorque>5.0</wheelTorque>
-			<commandTopic>cmd_vel</commandTopic>
-			<odometryTopic>odom</odometryTopic>
-			<odometryFrame>odom</odometryFrame>
-			<robotBaseFrame>base_footprint</robotBaseFrame>
-			<rosDebugLevel>Info</rosDebugLevel>
-			<publishWheelTF>false</publishWheelTF>
-			<publishWheelJointState>true</publishWheelJointState>
-			<wheelAcceleration>0.0</wheelAcceleration>
-			<odometrySource>world</odometrySource>
-			<publishTf>true</publishTf>
+			<updateRate>20.0</updateRate>
+			<bodyName>base_imu_link</bodyName>
+			<topicName>imu</topicName>
+			<gaussianNoise>0.05</gaussianNoise>
+			<frameName>base_imu_link</frameName>
+			<xyzOffsets>0 0 0</xyzOffsets>
+			<rpyOffset>0 0 0</rpyOffset>
 		</plugin>
 	</gazebo>
+
+	<xacro:macro name="range_sensor" params="name ros_topic update_rate minRange maxRange fov radiation">
+		<gazebo reference="${name}">
+			<sensor type="ray" name="${name}_sensor">
+				<pose>0 0 0 0 0 0</pose>
+				<update_rate>${update_rate}</update_rate>
+				<visualize>false</visualize>
+				<ray>
+					<scan>
+						<horizontal>
+							<samples>5</samples>
+							<resolution>1</resolution>
+							<min_angle>-${fov/2}</min_angle>
+							<max_angle>${fov/2}</max_angle>
+						</horizontal>
+						<vertical>
+							<samples>5</samples>
+							<resolution>1</resolution>
+							<min_angle>-${fov/2}</min_angle>
+							<max_angle>${fov/2}</max_angle>
+						</vertical>
+					</scan>
+					<range>
+						<min>${minRange}</min>
+						<max>${maxRange}</max>
+						<resolution>0.01</resolution>
+					</range>
+				</ray>
+				<plugin filename="libgazebo_ros_range.so" name="gazebo_ros_range">
+					<gaussianNoise>0.005</gaussianNoise>
+					<alwaysOn>true</alwaysOn>
+					<updateRate>${update_rate}</updateRate>
+					<topicName>${ros_topic}</topicName>
+					<frameName>${name}</frameName>
+					<fov>${fov}</fov>
+					<radiation>${radiation}</radiation>
+				</plugin>
+			</sensor>
+		</gazebo>
+	</xacro:macro>
+
+	<xacro:range_sensor name="sonar_forward" ros_topic="range_forward" update_rate="10" minRange="0.04" maxRange="6" fov="${60*PI/180}" radiation="ultrasound" />
+	<xacro:range_sensor name="sonar_backward" ros_topic="range_backward" update_rate="10" minRange="0.04" maxRange="6" fov="${60*PI/180}" radiation="ultrasound" />
+	<xacro:range_sensor name="ir_left" ros_topic="range_left" update_rate="10" minRange="0.04" maxRange="0.3" fov="${5*PI/180}" radiation="infrared" />
+	<xacro:range_sensor name="ir_right" ros_topic="range_right" update_rate="10" minRange="0.04" maxRange="0.3" fov="${5*PI/180}" radiation="infrared" />
 </robot>

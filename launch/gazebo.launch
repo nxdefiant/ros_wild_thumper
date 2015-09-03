@@ -1,5 +1,8 @@
 <?xml version="1.0"?>
 <launch>
+	<!-- Load joint controller configurations from YAML file to parameter server -->
+	<rosparam file="$(find wild_thumper)/config/control.yaml" command="load" />
+
 	<include file="$(find gazebo_ros)/launch/empty_world.launch" >
 		<arg name="world_name" value="$(find wild_thumper)/worlds/test.world" />
 		<arg name="gui" value="false" />
@@ -12,7 +15,23 @@
 	<!-- Spawn a robot into Gazebo -->
 	<node name="spawn_urdf" pkg="gazebo_ros" type="spawn_model" args="-param robot_description -urdf -model wild_thumper" output="screen" />
 
+	<!-- load the controllers -->
+	<node name="controller_spawner" pkg="controller_manager" type="spawner" output="screen" ns="/" args="joint_state_controller diff_drive_controller"/>
+
+	<node name="relay_cmd_vel" pkg="topic_tools" type="relay" output="screen" args="/cmd_vel /diff_drive_controller/cmd_vel" />
+	<node name="relay_odom" pkg="topic_tools" type="relay" output="screen" args="/diff_drive_controller/odom /odom" />
+
 	<node pkg="depthimage_to_laserscan" type="depthimage_to_laserscan" name="depthimage_to_laserscan" output="screen">
 		<remap from="/image" to="/camera/depth/image_raw"/>
         </node>
+
+	<node pkg="robot_pose_ekf" type="robot_pose_ekf" name="robot_pose_ekf" output="screen">
+		<remap from="imu_data" to="imu"/>
+		<remap from="robot_pose_ekf/odom_combined" to="odom_combined"/>
+		<param name="output_frame" value="odom"/>
+		<param name="freq" value="20.0"/>
+		<param name="vo_used" value="false"/>
+		<param name="debug" value="true"/>
+		<param name="sensor_timeout" value="2.0"/>
+	</node>
 </launch>

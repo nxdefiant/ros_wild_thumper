@@ -39,15 +39,18 @@ class MoveBase:
 		rate = rospy.Rate(20.0)
 		reset_val = self.get_reset()
 		rospy.loginfo("Reset Status: 0x%x" % reset_val)
+		i = 0
 		while not rospy.is_shutdown():
 			#print struct.unpack(">B", i2c_read_reg(0x50, 0xA2, 1))[0] # count test
 			self.get_tle_err()
 			self.get_odom()
 			self.get_voltage()
-			self.get_dist_forward()
-			self.get_dist_backward()
-			self.get_dist_left()
-			self.get_dist_right()
+			if i % 2:
+				self.get_dist_forward()
+				self.get_dist_backward()
+				self.get_dist_left()
+				self.get_dist_right()
+			i+=1
 			rate.sleep()
 
 	def set_motor_handicap(self, front, aft): # percent
