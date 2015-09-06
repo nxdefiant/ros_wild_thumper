@@ -20,8 +20,8 @@ class Waypoint:
 		goal.target_pose.header.frame_id = "base_footprint"
 		goal.target_pose.header.stamp = rospy.Time.now()
 
-		goal.target_pose.pose.position.x = 1.0;
-		goal.target_pose.pose.orientation.w = 1.0;
+		goal.target_pose.pose.position.x = 1.0
+		goal.target_pose.pose.orientation.w = 1.0
 
 		self.move_base.send_goal(goal)
 

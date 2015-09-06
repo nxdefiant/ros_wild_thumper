@@ -1,7 +1,10 @@
 <?xml version="1.0"?>
 <launch>
+	<arg name="use_imu" default="true"/>
+
 	<!-- Load joint controller configurations from YAML file to parameter server -->
 	<rosparam file="$(find wild_thumper)/config/control.yaml" command="load" />
+	<rosparam param="/diff_drive_controller/enable_odom_tf" unless="$(arg use_imu)">true</rosparam>
 
 	<include file="$(find gazebo_ros)/launch/empty_world.launch" >
 		<arg name="world_name" value="$(find wild_thumper)/worlds/test.world" />
@@ -25,7 +28,7 @@
 		<remap from="/image" to="/camera/depth/image_raw"/>
         </node>
 
-	<node pkg="robot_pose_ekf" type="robot_pose_ekf" name="robot_pose_ekf" output="screen">
+	<node pkg="robot_pose_ekf" type="robot_pose_ekf" name="robot_pose_ekf" output="screen" if="$(arg use_imu)">
 		<remap from="imu_data" to="imu"/>
 		<remap from="robot_pose_ekf/odom_combined" to="odom_combined"/>
 		<param name="output_frame" value="odom"/>

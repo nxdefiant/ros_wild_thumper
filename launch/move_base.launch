@@ -2,13 +2,16 @@
 <launch>
 	<arg name="slam_gmapping" default="false" />
 	<arg name="map_file" default="$(find wild_thumper)/data/map.yaml" />
+	<arg name="nomap" default="false" />
 
 	<!-- Run the map server -->
 	<node name="map_server" pkg="map_server" type="map_server" args="$(arg map_file)" unless="$(arg slam_gmapping)" />
 
 	<!-- Run AMCL -->
-	<include file="$(find amcl)/examples/amcl_diff.launch" unless="$(arg slam_gmapping)" />
-	<param name="amcl/base_frame_id" value="base_footprint" />
+	<group unless="$(arg nomap)">
+		<include file="$(find amcl)/examples/amcl_diff.launch" unless="$(arg slam_gmapping)" />
+		<param name="amcl/base_frame_id" value="base_footprint" />
+	</group>
 
 	<node pkg="gmapping" type="slam_gmapping" name="slap_gmapping" output="screen" if="$(arg slam_gmapping)">
 		<param name="scan" value="scan" />
@@ -26,7 +29,8 @@
 	<node pkg="move_base" type="move_base" respawn="false" name="move_base" output="screen">
 		<rosparam file="$(find wild_thumper)/config/costmap_common_params.yaml" command="load" ns="global_costmap" />
 		<rosparam file="$(find wild_thumper)/config/costmap_common_params.yaml" command="load" ns="local_costmap" />
-		<rosparam file="$(find wild_thumper)/config/global_costmap_params.yaml" command="load" />
+		<rosparam file="$(find wild_thumper)/config/global_costmap_params.yaml" command="load" unless="$(arg nomap)" />
+		<rosparam file="$(find wild_thumper)/config/global_costmap_params_odom.yaml" command="load" if="$(arg nomap)" />
 		<rosparam file="$(find wild_thumper)/config/local_costmap_params.yaml" command="load" />
 		<rosparam file="$(find wild_thumper)/config/base_local_planner_params.yaml" command="load" />
 	</node>
