@@ -4,11 +4,11 @@
 	<arg name="map_file" default="$(find wild_thumper)/data/map.yaml" />
 	<arg name="nomap" default="false" />
 
-	<!-- Run the map server -->
-	<node name="map_server" pkg="map_server" type="map_server" args="$(arg map_file)" unless="$(arg slam_gmapping)" />
-
 	<!-- Run AMCL -->
 	<group unless="$(arg nomap)">
+		<!-- Run the map server -->
+		<node name="map_server" pkg="map_server" type="map_server" args="$(arg map_file)" unless="$(arg slam_gmapping)" />
+
 		<include file="$(find amcl)/examples/amcl_diff.launch" unless="$(arg slam_gmapping)" />
 		<param name="amcl/base_frame_id" value="base_footprint" />
 	</group>
