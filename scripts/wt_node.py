@@ -151,7 +151,7 @@ class MoveBase:
 		odom.pose.covariance[14] = 1e6 # z
 		odom.pose.covariance[21] = 1e6 # rotation about X axis
 		odom.pose.covariance[28] = 1e6 # rotation about Y axis
-		odom.pose.covariance[35] = 0.1 # rotation about Z axis
+		odom.pose.covariance[35] = 0.03 # rotation about Z axis
 
 		# set the velocity
 		odom.child_frame_id = "base_footprint"
@@ -163,7 +163,7 @@ class MoveBase:
 		odom.twist.covariance[14] = 1e6 # z
 		odom.twist.covariance[21] = 1e6 # rotation about X axis
 		odom.twist.covariance[28] = 1e6 # rotation about Y axis
-		odom.twist.covariance[35] = 0.1 # rotation about Z axis
+		odom.twist.covariance[35] = 0.03 # rotation about Z axis
 
 		# publish the message
 		self.pub_odom.publish(odom)

@@ -82,7 +82,7 @@ class UMBMark:
 			self.next_pos(2, 0, 0)
 			self.next_pos(0, 0, direction*90*pi/180)
 		final_pose = map(operator.sub, self.odom_pose, init_pose)
-		print "Odom Pose: x=%.2f, y=%.2f, angle=%.2f°" % (final_pose[0], final_pose[1], final_pose[2]*180/pi)
+		print "Odom Pose: x=%.3f, y=%.3f, angle=%.3f°" % (final_pose[0], final_pose[1], final_pose[2]*180/pi)
 
 	def run_cw(self):
 		self.run(-1)

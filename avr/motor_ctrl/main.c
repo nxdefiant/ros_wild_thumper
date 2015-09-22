@@ -106,8 +106,8 @@
 #define KI 0.051429
 #define KD 0.000378
 #define PID_T 0.01
-#define STEP_PER_M 4171.4 // wheel diameter=12cm, encoder=48cpr, gear ratio=1:34
-#define WHEEL_DIST 0.252
+#define STEP_PER_M 4171.4 // wheel diameter=12cm, encoder=48cpr, gear ratio=1:34, calculated wheel diameter: 0.12454m
+#define WHEEL_DIST 0.36923 // Real: 0.252
 
 enum mode {
 	MOTOR_MANUAL,
