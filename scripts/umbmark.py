@@ -21,10 +21,14 @@
 # beta = (y_cg_cw + y_cg_ccw)/(-4*L)
 # R = (L/2)/sin(beta/2)
 # Ed = Dr/Dl*(R+b/2)/(R-b/2)
+# Da = (Dr + Dl)/2
+# Dl = 2/(Ed + 1) * Da
+# Dr = 2/((1/Ed) + 1) * Da
 # 
 # Wheelbase correction:
 # alpha = (y_cg_cw - y_cg_ccw)/(-4*L) * 180/pi
 # Eb = (90)/(90-alpha)
+# b_new = Eb*b
 
 import sys
 import rospy

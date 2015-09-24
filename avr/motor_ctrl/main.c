@@ -106,7 +106,10 @@
 #define KI 0.051429
 #define KD 0.000378
 #define PID_T 0.01
-#define STEP_PER_M 4171.4 // wheel diameter=12cm, encoder=48cpr, gear ratio=1:34, calculated wheel diameter: 0.12454m
+// wheel diameter=12cm, encoder=48cpr, gear ratio=1:34, real wheel diameter: 0.12454m
+#define STEP_PER_M_AVG 4171.4
+#define STEP_PER_M_LEFT (STEP_PER_M_AVG)
+#define STEP_PER_M_RIGHT (STEP_PER_M_AVG)
 #define WHEEL_DIST 0.36923 // Real: 0.252
 
 enum mode {
@@ -267,8 +270,8 @@ ISR(TWI_vect)
 					break;
 				case 0x2B: // Left speed wish LSB
 					tmp_speed.i = tmp_speed.i << 8 | TWDR;
-					speed1_wish = tmp_speed.f*STEP_PER_M;
-					speed2_wish = tmp_speed.f*STEP_PER_M;
+					speed1_wish = tmp_speed.f*STEP_PER_M_LEFT;
+					speed2_wish = tmp_speed.f*STEP_PER_M_LEFT;
 					motor1_mode = MOTOR_PID;
 					motor2_mode = MOTOR_PID;
 					TWI_ACK;
@@ -287,8 +290,8 @@ ISR(TWI_vect)
 					break;
 				case 0x2F: // Right speed wish LSB
 					tmp_speed.i = tmp_speed.i << 8 | TWDR;
-					speed1_wish = tmp_speed.f*STEP_PER_M;
-					speed2_wish = tmp_speed.f*STEP_PER_M;
+					speed1_wish = tmp_speed.f*STEP_PER_M_RIGHT;
+					speed2_wish = tmp_speed.f*STEP_PER_M_RIGHT;
 					motor1_mode = MOTOR_PID;
 					motor2_mode = MOTOR_PID;
 					TWI_ACK;
@@ -772,8 +775,8 @@ static void update_pos(void) {
 	new_speed3 = pos3_diff/PID_T;
 	new_speed4 = pos4_diff/PID_T;
 
-	diff_left_m = (pos1_diff + pos2_diff)/(2*STEP_PER_M);
-	diff_right_m = (pos3_diff + pos4_diff)/(2*STEP_PER_M);
+	diff_left_m = (pos1_diff + pos2_diff)/(2*STEP_PER_M_LEFT);
+	diff_right_m = (pos3_diff + pos4_diff)/(2*STEP_PER_M_RIGHT);
 	angle_diff = (diff_right_m - diff_left_m) / WHEEL_DIST;
 
 	angle_new = angle.f + angle_diff;
@@ -786,8 +789,8 @@ static void update_pos(void) {
 
 	speed_l = (new_speed1+new_speed2)/2;
 	speed_r = (new_speed3+new_speed4)/2;
-	tmp_speed_lin = (speed_l + speed_r)/(2.0*STEP_PER_M);
-	tmp_speed_rot = (speed_r - speed_l)/(M_PI*WHEEL_DIST*STEP_PER_M);
+	tmp_speed_lin = (speed_l + speed_r)/(2.0*STEP_PER_M_AVG);
+	tmp_speed_rot = (speed_r - speed_l)/(M_PI*WHEEL_DIST*STEP_PER_M_AVG);
 
 	// copy from tmp
 	cli();
@@ -962,8 +965,8 @@ int main(void) {
 			speed_wish_right = angle*M_PI*WHEEL_DIST/2 + speed;
 			speed_wish_left = speed*2-speed_wish_right;
 
-			speed_wish_left*=STEP_PER_M;
-			speed_wish_right*=STEP_PER_M;
+			speed_wish_left*=STEP_PER_M_LEFT;
+			speed_wish_right*=STEP_PER_M_RIGHT;
 
 			if (speed_wish_left > 0 && aft_handicap_fwd > 0) {
 				speed1_wish = speed_wish_left * (100-aft_handicap_fwd)/100.0;
