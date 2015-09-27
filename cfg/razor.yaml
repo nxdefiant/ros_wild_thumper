@@ -23,8 +23,8 @@ magn_z_max: 596
 
 # extended calibration
 calibration_magn_use_extended: true
-magn_ellipsoid_center: [314.663, 115.689, -632.692]
-magn_ellipsoid_transform: [[0.937505, 0.0217526, 0.0102850], [0.0217526, 0.936649, 0.0279058], [0.0102850, 0.0279058, 0.980535]]
+magn_ellipsoid_center: [253.780, 56.6661, -712.749]
+magn_ellipsoid_transform: [[0.929568, 0.00880376, 0.0124014], [0.00880376, 0.949055, 0.00600124], [0.0124014, 0.00600124, 0.996672]]
 
 # AHRS to robot calibration
 imu_yaw_calibration: 0.0

@@ -11,3 +11,5 @@ TrajectoryPlannerROS:
 
   holonomic_robot: false
   meter_scoring: true
+
+  sim_granularity: 0.01

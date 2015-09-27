@@ -246,8 +246,8 @@
 		</gazebo>
 	</xacro:macro>
 
-	<xacro:range_sensor name="sonar_forward" ros_topic="range_forward" update_rate="10" minRange="0.04" maxRange="6" fov="${60*PI/180}" radiation="ultrasound" />
-	<xacro:range_sensor name="sonar_backward" ros_topic="range_backward" update_rate="10" minRange="0.04" maxRange="6" fov="${60*PI/180}" radiation="ultrasound" />
+	<xacro:range_sensor name="sonar_forward" ros_topic="range_forward" update_rate="10" minRange="0.04" maxRange="6" fov="${30*PI/180}" radiation="ultrasound" />
+	<xacro:range_sensor name="sonar_backward" ros_topic="range_backward" update_rate="10" minRange="0.04" maxRange="6" fov="${30*PI/180}" radiation="ultrasound" />
 	<xacro:range_sensor name="ir_left" ros_topic="range_left" update_rate="10" minRange="0.04" maxRange="0.3" fov="${5*PI/180}" radiation="infrared" />
 	<xacro:range_sensor name="ir_right" ros_topic="range_right" update_rate="10" minRange="0.04" maxRange="0.3" fov="${5*PI/180}" radiation="infrared" />
 </robot>
