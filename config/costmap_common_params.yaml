@@ -1,5 +1,5 @@
 footprint: [[0.14, 0.16], [-0.14, 0.16], [-0.14, -0.16], [0.14, -0.16]]
-inflation_radius: 0.55
+inflation_radius: 0.5
 
 obstacle_layer:
   observation_sources: laser_scan_sensor

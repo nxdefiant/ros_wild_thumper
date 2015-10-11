@@ -2,9 +2,13 @@
 <launch>
 	<arg name="use_imu" default="true"/>
 
+	<node pkg="nodelet" type="nodelet" name="nodelet_manager" args="manager"/>
+
 	<param name="robot_description" command="$(find xacro)/xacro.py $(find wild_thumper)/urdf/wild_thumper.urdf.xacro"/>
 
-	<node pkg="robot_state_publisher" type="robot_state_publisher" name="robot_state_publisher" output="screen"/>
+	<node pkg="robot_state_publisher" type="robot_state_publisher" name="robot_state_publisher" output="screen">
+		<param name="publish_frequency" value="20.0" />
+	</node>
 	<node pkg="joint_state_publisher" type="joint_state_publisher" name="joint_state_publisher" output="screen"/>
 
 	<node pkg="diagnostic_aggregator" type="aggregator_node" name="diagnostic_aggregator" output="screen">
@@ -24,14 +28,15 @@
 		<param name="use_gps_time" value="false"/>
 	</node>
 
-	<node pkg="gps_common" type="utm_odometry_node" name="gps_conv">
-		<remap from="odom" to="odom_gps"/>
-		<param name="frame_id" value="base_footprint"/>
+	<node pkg="gps_common" type="utm_odometry_node" name="gps_conv" output="screen">
+		<remap from="odom" to="gps"/>
+		<param name="frame_id" value="odom"/>
+		<param name="child_frame_id" value="base_footprint"/>
 	</node>
 
 	<node pkg="robot_pose_ekf" type="robot_pose_ekf" name="robot_pose_ekf" output="screen" if="$(arg use_imu)">
 		<remap from="imu_data" to="imu"/>
-		<remap from="vo" to="odom_gps"/>
+		<remap from="vo" to="gps"/>
 		<remap from="robot_pose_ekf/odom_combined" to="odom_combined"/>
 		<param name="output_frame" value="odom"/>
 		<param name="freq" value="20.0"/>
@@ -39,4 +44,10 @@
 		<param name="debug" value="true"/>
 		<param name="sensor_timeout" value="2.0"/>
 	</node>
+	<!-- <include file="$(find wild_thumper)/launch/robot_localization.launch" if="$(arg use_imu)"/> -->
+
+	<include file="$(find yocs_cmd_vel_mux)/launch/cmd_vel_mux.launch">
+		<arg name="config_file" value="$(find wild_thumper)/cfg/cmd_vel_mux.yaml" />
+		<arg name="nodelet_manager_name" value="nodelet_manager" />
+	</include>
 </launch>

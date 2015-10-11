@@ -6,7 +6,6 @@
 		<param name="axis_deadman" value="3"/>
 		<param name="axis_linear" value="1"/>
 		<param name="axis_angular" value="0"/>
-		<remap from="turtlebot_teleop_joystick/cmd_vel" to="/cmd_vel"/>
 	</node>
 
 	<node pkg="wiimote" type="wiimote_node.py" name="wiimote" respawn="true" />

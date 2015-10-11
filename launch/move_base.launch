@@ -33,5 +33,6 @@
 		<rosparam file="$(find wild_thumper)/config/global_costmap_params_odom.yaml" command="load" if="$(arg nomap)" />
 		<rosparam file="$(find wild_thumper)/config/local_costmap_params.yaml" command="load" />
 		<rosparam file="$(find wild_thumper)/config/base_local_planner_params.yaml" command="load" />
+		<remap from="/cmd_vel" to="move_base/cmd_vel"/>
 	</node>
 </launch>

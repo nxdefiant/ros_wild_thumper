@@ -4,6 +4,7 @@
 import rospy
 import tf
 import struct
+import prctl
 from i2c import *
 from math import *
 from geometry_msgs.msg import Twist
@@ -16,7 +17,8 @@ WHEEL_DIST = 0.248
 class MoveBase:
 	def __init__(self):
 		rospy.init_node('wild_thumper')
-		rospy.Subscriber("cmd_vel", Twist, self.cmdVelReceived)
+		prctl.set_name("wild_thumper")
+		rospy.Subscriber("cmd_vel_out", Twist, self.cmdVelReceived)
 		rospy.Subscriber("imu", Imu, self.imuReceived)
 		enable_odom_tf = rospy.get_param("~enable_odom_tf", True)
 		if enable_odom_tf:
@@ -47,8 +49,9 @@ class MoveBase:
 			self.get_voltage()
 			if i % 2:
 				self.get_dist_forward()
-				self.get_dist_backward()
 				self.get_dist_left()
+			else:
+				self.get_dist_backward()
 				self.get_dist_right()
 			i+=1
 			rate.sleep()
@@ -193,13 +196,17 @@ class MoveBase:
 		val = struct.unpack(">H", s)[0]
 		return val
 	
-	def get_dist_srf(self, num):
+	def start_dist_srf(self, num):
 		dev = i2c(0x52)
 		s = struct.pack("B", num)
 		dev.write(s)
 		dev.close()
 
-		sleep(50e-3)
+	def read_dist_srf(self, num):
+		dev = i2c(0x52)
+		s = struct.pack("B", num)
+		dev.write(s)
+		dev.close()
 
 		dev = i2c(0x52)
 		s = dev.read(2)
@@ -221,22 +228,24 @@ class MoveBase:
 	def get_dist_left(self):
 		if self.pub_range_left.get_num_connections() > 0:
 			dist = 30.553/(self.get_dist_ir(0x1) - -67.534)
-			self.send_range(self.pub_range_left, "ir_left", Range.INFRARED, dist, 0.04, 0.3, 5)
+			self.send_range(self.pub_range_left, "ir_left", Range.INFRARED, dist, 0.04, 0.3, 1)
 
 	def get_dist_right(self):
 		if self.pub_range_right.get_num_connections() > 0:
 			dist = 17.4/(self.get_dist_ir(0x3) - 69)
-			self.send_range(self.pub_range_right, "ir_right", Range.INFRARED, dist, 0.04, 0.3, 5)
+			self.send_range(self.pub_range_right, "ir_right", Range.INFRARED, dist, 0.04, 0.3, 1)
 
 	def get_dist_forward(self):
 		if self.pub_range_fwd.get_num_connections() > 0:
-			dist = self.get_dist_srf(0x5)
+			dist = self.read_dist_srf(0x15)
 			self.send_range(self.pub_range_fwd, "sonar_forward", Range.ULTRASOUND, dist, 0.04, 6, 30)
+			self.start_dist_srf(0x5) # get next value
 
 	def get_dist_backward(self):
 		if self.pub_range_bwd.get_num_connections() > 0:
-			dist = self.get_dist_srf(0x7)
+			dist = self.read_dist_srf(0x17)
 			self.send_range(self.pub_range_bwd, "sonar_backward", Range.ULTRASOUND, dist, 0.04, 6, 30)
+			self.start_dist_srf(0x7) # get next value
 		
 
 if __name__ == "__main__":
