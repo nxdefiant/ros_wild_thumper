@@ -18,6 +18,10 @@
  * 0x06 Distance forward LSB
  * 0x07 Distance backward MSB
  * 0x08 Distance backward LSB
+ * 0x15 Distance forward MSB (read only)
+ * 0x16 Distance forward LSB (read only)
+ * 0x17 Distance backward MSB (read only)
+ * 0x18 Distance backward LSB (read only)
  * 0x09 Voltage MSB
  * 0x0A Voltage LSB
  *
@@ -103,6 +107,24 @@ ISR(TWI_vect)
 					TWI_ACK;
 					break;
 				case 0x08: // Distance backward LSB
+					TWDR = tmp16;
+					TWI_ACK;
+					break;
+				case 0x15: // Distance forward MSB
+					tmp16 = dist_forward;
+					TWDR = tmp16>>8;
+					TWI_ACK;
+					break;
+				case 0x16: // Distance forward LSB
+					TWDR = tmp16;
+					TWI_ACK;
+					break;
+				case 0x17: // Distance backward MSB
+					tmp16 = dist_backward;
+					TWDR = tmp16>>8;
+					TWI_ACK;
+					break;
+				case 0x18: // Distance backward LSB
 					TWDR = tmp16;
 					TWI_ACK;
 					break;
