@@ -36,15 +36,14 @@
 
 	<node pkg="robot_pose_ekf" type="robot_pose_ekf" name="robot_pose_ekf" output="screen" if="$(arg use_imu)">
 		<remap from="imu_data" to="imu"/>
-		<remap from="vo" to="gps"/>
 		<remap from="robot_pose_ekf/odom_combined" to="odom_combined"/>
 		<param name="output_frame" value="odom"/>
 		<param name="freq" value="20.0"/>
-		<param name="vo_used" value="true"/>
-		<param name="debug" value="true"/>
+		<param name="vo_used" value="false"/>
+		<param name="gps_used" value="true"/>
+		<param name="debug" value="false"/>
 		<param name="sensor_timeout" value="2.0"/>
 	</node>
-	<!-- <include file="$(find wild_thumper)/launch/robot_localization.launch" if="$(arg use_imu)"/> -->
 
 	<include file="$(find yocs_cmd_vel_mux)/launch/cmd_vel_mux.launch">
 		<arg name="config_file" value="$(find wild_thumper)/cfg/cmd_vel_mux.yaml" />

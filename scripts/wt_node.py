@@ -65,10 +65,10 @@ class MoveBase:
 		(roll, pitch, yaw) = tf.transformations.euler_from_quaternion(msg.orientation.__getstate__())
 		if pitch > 30*pi/180:
 			val = (100.0/65)*abs(pitch)*180/pi
-			self.set_motor_handicap(0, int(val))
+			self.set_motor_handicap(int(val), 0)
 		elif pitch < -30*pi/180:
 			val = (100.0/65)*abs(pitch)*180/pi
-			self.set_motor_handicap(int(val), 0)
+			self.set_motor_handicap(0, int(val))
 		else:
 			self.set_motor_handicap(0, 0)
 
