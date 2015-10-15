@@ -238,13 +238,13 @@ class MoveBase:
 	def get_dist_forward(self):
 		if self.pub_range_fwd.get_num_connections() > 0:
 			dist = self.read_dist_srf(0x15)
-			self.send_range(self.pub_range_fwd, "sonar_forward", Range.ULTRASOUND, dist, 0.04, 6, 30)
+			self.send_range(self.pub_range_fwd, "sonar_forward", Range.ULTRASOUND, dist, 0.04, 6, 40)
 			self.start_dist_srf(0x5) # get next value
 
 	def get_dist_backward(self):
 		if self.pub_range_bwd.get_num_connections() > 0:
 			dist = self.read_dist_srf(0x17)
-			self.send_range(self.pub_range_bwd, "sonar_backward", Range.ULTRASOUND, dist, 0.04, 6, 30)
+			self.send_range(self.pub_range_bwd, "sonar_backward", Range.ULTRASOUND, dist, 0.04, 6, 40)
 			self.start_dist_srf(0x7) # get next value
 		
 
