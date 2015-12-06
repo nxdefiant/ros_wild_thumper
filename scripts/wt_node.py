@@ -5,21 +5,50 @@ import rospy
 import tf
 import struct
 import prctl
+import spidev
 from i2c import *
 from math import *
 from geometry_msgs.msg import Twist
 from nav_msgs.msg import Odometry
 from diagnostic_msgs.msg import DiagnosticArray, DiagnosticStatus, KeyValue
 from sensor_msgs.msg import Imu, Range
+from wild_thumper.msg import LedStripe
 
 WHEEL_DIST = 0.248
+
+class LPD8806:
+	def __init__(self, bus, device, num_leds):
+		self.spi = spidev.SpiDev()
+		self.spi.open(bus, device)
+		self.spi.mode=0b00
+		self.spi.max_speed_hz=int(2e6)
+		self.num_leds = num_leds
+		self.latch()
+		self.l = [(0, 0, 0)] * num_leds
+		self.update()
+	
+	def set(self, i, red=0, green=0, blue=0):
+		if red > 127 or green > 127 or blue >> 127 or red < 0 or green < 0 or blue < 0:
+			raise Exception("Bad RGB Value")
+		self.l[i] = (red, green, blue)
+
+	def latch(self):
+		self.spi.writebytes([0x0 for i in range((self.num_leds+31)/32)])
+	
+	def update(self):
+		l = []
+		for i in range(self.num_leds):
+			red, green, blue = self.l[i]
+			l.append(0x80 | green)
+			l.append(0x80 | red)
+			l.append(0x80 | blue)
+		self.spi.writebytes(l)
+		self.latch()
 
 class MoveBase:
 	def __init__(self):
 		rospy.init_node('wild_thumper')
 		prctl.set_name("wild_thumper")
-		rospy.Subscriber("cmd_vel_out", Twist, self.cmdVelReceived)
-		rospy.Subscriber("imu", Imu, self.imuReceived)
 		enable_odom_tf = rospy.get_param("~enable_odom_tf", True)
 		if enable_odom_tf:
 			self.tf_broadcaster = tf.broadcaster.TransformBroadcaster()
@@ -35,6 +64,10 @@ class MoveBase:
 		rospy.loginfo("Init done")
 		i2c_write_reg(0x50, 0x90, struct.pack("BB", 1, 1)) # switch direction
 		self.handicap_last = (-1, -1)
+		self.pStripe = LPD8806(1, 0, 12)
+		rospy.Subscriber("cmd_vel_out", Twist, self.cmdVelReceived)
+		rospy.Subscriber("imu", Imu, self.imuReceived)
+		rospy.Subscriber("led_stripe", LedStripe, self.led_stripe_received)
 		self.run()
 	
 	def run(self):
@@ -246,6 +279,11 @@ class MoveBase:
 			dist = self.read_dist_srf(0x17)
 			self.send_range(self.pub_range_bwd, "sonar_backward", Range.ULTRASOUND, dist, 0.04, 6, 40)
 			self.start_dist_srf(0x7) # get next value
+	
+	def led_stripe_received(self, msg):
+		for led in msg.leds:
+			self.pStripe.set(led.num, red=led.red, green=led.green, blue=led.blue)
+			self.pStripe.update()
 		
 
 if __name__ == "__main__":
