@@ -4,7 +4,6 @@
 import rospy
 from random import *
 from wild_thumper.msg import LedStripe, Led
-from time import sleep
 
 max_val = 10
 

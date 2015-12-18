@@ -6,10 +6,12 @@ import inspect
 import os
 import logging
 import struct
+import fcntl
 from ctypes import *
 from time import sleep
 
 DEBUG=0
+I2C_FILENAME = "/dev/i2c-2"
 logger = logging.getLogger(__name__)
 
 class i2c:
@@ -32,9 +34,10 @@ class i2c:
 					logger.warning("Error: (%s) I2C blocked %fs by %s!", parent, count*0.001, parent_owner)
 				i2c.__parent_owner = inspect.stack()[1]
 			i2c.__single = True
-		self.dev = i2c.libc.open("/dev/i2c-2", os.O_RDWR)
+		self.dev = i2c.libc.open(I2C_FILENAME, os.O_RDWR)
 		if self.dev < 0:
 			raise IOError("open")
+		fcntl.flock(self.dev, fcntl.LOCK_EX)
 		err = i2c.libc.ioctl(self.dev, i2c.I2C_SLAVE, addr>>1)
 		if err < 0:
 			raise IOError("ioctl")

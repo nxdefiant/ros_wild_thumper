@@ -6,7 +6,8 @@ import tf
 import struct
 import prctl
 import spidev
-from i2c import *
+from time import sleep
+from i2c import i2c, i2c_write_reg, i2c_read_reg
 from math import *
 from geometry_msgs.msg import Twist
 from nav_msgs.msg import Odometry
@@ -115,10 +116,18 @@ class MoveBase:
 		stat.level = DiagnosticStatus.ERROR if reset & 0x0c else DiagnosticStatus.OK
 		stat.message = "0x%02x" % reset
 
-		stat.values.append(KeyValue("Watchdog Reset Flag", str(bool(reset & (1 << 3)))))
-		stat.values.append(KeyValue("Brown-out Reset Flag", str(bool(reset & (1 << 2)))))
-		stat.values.append(KeyValue("External Reset Flag", str(bool(reset & (1 << 1)))))
-		stat.values.append(KeyValue("Power-on Reset Flag", str(bool(reset & (1 << 0)))))
+		wdrf = bool(reset & (1 << 3))
+		if wdrf: rospy.loginfo("Watchdog Reset")
+		borf = bool(reset & (1 << 2))
+		if borf: rospy.loginfo("Brown-out Reset Flag")
+		extrf = bool(reset & (1 << 1))
+		if extrf: rospy.loginfo("External Reset Flag")
+		porf = bool(reset & (1 << 0))
+		if porf: rospy.loginfo("Power-on Reset Flag")
+		stat.values.append(KeyValue("Watchdog Reset Flag", str(wdrf)))
+		stat.values.append(KeyValue("Brown-out Reset Flag", str(borf)))
+		stat.values.append(KeyValue("External Reset Flag", str(extrf)))
+		stat.values.append(KeyValue("Power-on Reset Flag", str(porf)))
 
 		msg.status.append(stat)
 		self.pub_diag.publish(msg)
@@ -236,16 +245,7 @@ class MoveBase:
 		dev.close()
 
 	def read_dist_srf(self, num):
-		dev = i2c(0x52)
-		s = struct.pack("B", num)
-		dev.write(s)
-		dev.close()
-
-		dev = i2c(0x52)
-		s = dev.read(2)
-		dev.close()
-
-		return struct.unpack(">H", s)[0]/1000.0
+		return struct.unpack(">H", i2c_read_reg(0x52, num, 2))[0]/1000.0
 
 	def send_range(self, pub, frame_id, typ, dist, min_range, max_range, fov_deg):
 		msg = Range()
@@ -260,13 +260,15 @@ class MoveBase:
 
 	def get_dist_left(self):
 		if self.pub_range_left.get_num_connections() > 0:
-			dist = 30.553/(self.get_dist_ir(0x1) - -67.534)
-			self.send_range(self.pub_range_left, "ir_left", Range.INFRARED, dist, 0.04, 0.3, 1)
+			dist = self.get_dist_ir(0x1)
+			if dist > -67:
+				self.send_range(self.pub_range_left, "ir_left", Range.INFRARED, 30.553/(dist - -67.534), 0.04, 0.3, 1)
 
 	def get_dist_right(self):
 		if self.pub_range_right.get_num_connections() > 0:
-			dist = 17.4/(self.get_dist_ir(0x3) - 69)
-			self.send_range(self.pub_range_right, "ir_right", Range.INFRARED, dist, 0.04, 0.3, 1)
+			dist = self.get_dist_ir(0x3)
+			if dist > 69:
+				self.send_range(self.pub_range_right, "ir_right", Range.INFRARED, 17.4/(dist - 69), 0.04, 0.3, 1)
 
 	def get_dist_forward(self):
 		if self.pub_range_fwd.get_num_connections() > 0:
