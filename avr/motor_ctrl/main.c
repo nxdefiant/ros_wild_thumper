@@ -60,7 +60,6 @@
  * 0x3D Angle (rad/s)
  * 0x3E Angle (rad/s)
  * 0x3F Angle (rad/s) LSB
- * free
  * 0x40 Position x (m) MSB
  * 0x41 Position x (m)
  * 0x42 Position x (m)
@@ -87,8 +86,8 @@
  * 0x91 Motor 2 switch
  * 0x92 Motor 3 switch
  * 0x93 Motor 4 switch
- * 0x94 Front Handicap backward
- * 0x95 Aft Handicap forward
+ * 0x94 Front Handicap
+ * 0x95 Aft Handicap
  * free
  * 0xA0 Reset reason
  * 0xA1 TLE Error status
@@ -161,8 +160,8 @@ static volatile ufloat_t angle={0.0};
 static volatile float cur_speed_lin=0;
 static volatile float cur_speed_rot=0;
 static volatile uint8_t count_test=0;
-static volatile uint8_t front_handicap_bwd=0;
-static volatile uint8_t aft_handicap_fwd=0;
+static volatile uint8_t front_handicap=0;
+static volatile uint8_t aft_handicap=0;
 
 ISR(TWI_vect)
 {
@@ -347,13 +346,13 @@ ISR(TWI_vect)
 					motor4_switch = TWDR;
 					TWI_ACK;
 					break;
-				case 0x94: // Front Handicap backward
-					front_handicap_bwd = TWDR;
+				case 0x94: // Front Handicap
+					front_handicap = TWDR;
 					cmd_vel.bUpdate = 1;
 					TWI_ACK;
 					break;
-				case 0x95: // Aft Handicap forward
-					aft_handicap_fwd = TWDR;
+				case 0x95: // Aft Handicap
+					aft_handicap = TWDR;
 					cmd_vel.bUpdate = 1;
 					TWI_ACK;
 					break;
@@ -968,25 +967,19 @@ int main(void) {
 			speed_wish_left*=STEP_PER_M_LEFT;
 			speed_wish_right*=STEP_PER_M_RIGHT;
 
-			if (speed_wish_left > 0 && aft_handicap_fwd > 0) {
-				speed1_wish = speed_wish_left * (100-aft_handicap_fwd)/100.0;
+			if (aft_handicap > 0) {
+				speed1_wish = speed_wish_left * (100-aft_handicap)/100.0;
+				speed4_wish = speed_wish_right * (100-aft_handicap)/100.0;
 			} else {
 				speed1_wish = speed_wish_left;
+				speed4_wish = speed_wish_right;
 			}
-			if (speed_wish_left < 0 && front_handicap_bwd > 0) {
-				speed2_wish = speed_wish_left * (100-front_handicap_bwd)/100.0;
+			if (front_handicap > 0) {
+				speed2_wish = speed_wish_left * (100-front_handicap)/100.0;
+				speed3_wish = speed_wish_right * (100-front_handicap)/100.0;
 			} else {
 				speed2_wish = speed_wish_left;
-			}
-			if (speed_wish_right < 0 && front_handicap_bwd > 0) {
-				speed3_wish = speed_wish_right * (100-front_handicap_bwd)/100.0;
-			} else {
 				speed3_wish = speed_wish_right;
-			}
-			if (speed_wish_right > 0 && aft_handicap_fwd > 0) {
-				speed4_wish = speed_wish_right * (100-aft_handicap_fwd)/100.0;
-			} else {
-				speed4_wish = speed_wish_right;
 			}
 			motor1_mode = MOTOR_PID;
 			motor2_mode = MOTOR_PID;
