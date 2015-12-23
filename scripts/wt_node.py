@@ -61,6 +61,7 @@ class MoveBase:
 		self.pub_range_bwd = rospy.Publisher("range_backward", Range, queue_size=16)
 		self.pub_range_left = rospy.Publisher("range_left", Range, queue_size=16)
 		self.pub_range_right = rospy.Publisher("range_right", Range, queue_size=16)
+		self.cmd_vel = None
 		self.set_speed(0, 0)
 		rospy.loginfo("Init done")
 		i2c_write_reg(0x50, 0x90, struct.pack("BB", 1, 1)) # switch direction
@@ -88,9 +89,14 @@ class MoveBase:
 				self.get_dist_backward()
 				self.get_dist_right()
 			i+=1
+			if self.cmd_vel != None:
+				self.set_speed(self.cmd_vel[0], self.cmd_vel[1])
+				self.cmd_vel = None
 			rate.sleep()
 
 	def set_motor_handicap(self, front, aft): # percent
+		if front > 100: front = 100
+		if aft > 100: aft = 100
 		if self.handicap_last != (front, aft):
 			i2c_write_reg(0x50, 0x94, struct.pack(">bb", front, aft))
 			self.handicap_last = (front, aft)
@@ -98,10 +104,10 @@ class MoveBase:
 	def imuReceived(self, msg):
 		(roll, pitch, yaw) = tf.transformations.euler_from_quaternion(msg.orientation.__getstate__())
 		if pitch > 30*pi/180:
-			val = (100.0/65)*abs(pitch)*180/pi
+			val = (100.0/60)*abs(pitch)*180/pi
 			self.set_motor_handicap(int(val), 0)
 		elif pitch < -30*pi/180:
-			val = (100.0/65)*abs(pitch)*180/pi
+			val = (100.0/60)*abs(pitch)*180/pi
 			self.set_motor_handicap(0, int(val))
 		else:
 			self.set_motor_handicap(0, 0)
@@ -167,8 +173,7 @@ class MoveBase:
 
 
 	def get_odom(self):
-		posx, posy, angle = struct.unpack(">fff", i2c_read_reg(0x50, 0x40, 12))
-		speed_trans, speed_rot = struct.unpack(">ff", i2c_read_reg(0x50, 0x38, 8))
+		speed_trans, speed_rot, posx, posy, angle = struct.unpack(">fffff", i2c_read_reg(0x50, 0x38, 20))
 		current_time = rospy.Time.now()
 
 		# since all odometry is 6DOF we'll need a quaternion created from yaw
@@ -218,9 +223,7 @@ class MoveBase:
 		i2c_write_reg(0x50, 0x50, struct.pack(">ff", trans, rot))
 
 	def cmdVelReceived(self, msg):
-		trans = msg.linear.x
-		rot = msg.angular.z # rad/s
-		self.set_speed(trans, rot)
+		self.cmd_vel = (msg.linear.x, msg.angular.z) # commit speed on next update cycle
 
 	# http://rn-wissen.de/wiki/index.php/Sensorarten#Sharp_GP2D12
 	def get_dist_ir(self, num):
