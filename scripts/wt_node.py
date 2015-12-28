@@ -74,6 +74,7 @@ class MoveBase:
 	
 	def run(self):
 		rate = rospy.Rate(20.0)
+		sleep(3) # wait 3s for ros to register and establish all subscriber connections before sending reset diag
 		reset_val = self.get_reset()
 		rospy.loginfo("Reset Status: 0x%x" % reset_val)
 		i = 0
