@@ -12,7 +12,7 @@
 	<node pkg="joint_state_publisher" type="joint_state_publisher" name="joint_state_publisher" output="screen"/>
 
 	<node pkg="diagnostic_aggregator" type="aggregator_node" name="diagnostic_aggregator" output="screen">
-		<rosparam command="load" file="$(find wild_thumper)/cfg/analyzers.yaml"/>
+		<rosparam command="load" file="$(find wild_thumper)/config/analyzers.yaml"/>
 	</node>
 
 	<node pkg="wild_thumper" type="wt_node.py" name="wild_thumper" output="screen" respawn="false" required="true">
@@ -21,7 +21,7 @@
 	</node>
 
 	<node pkg="razor_imu_9dof" type="imu_node.py" name="imu_node" output="screen" if="$(arg use_imu)">
-		<rosparam file="$(find wild_thumper)/cfg/razor.yaml" command="load"/>
+		<rosparam file="$(find wild_thumper)/config/razor.yaml" command="load"/>
 	</node>
 
 	<node pkg="gpsd_client" type="gpsd_client"  name="gpsd_client" output="screen">
@@ -46,7 +46,7 @@
 	</node>
 
 	<include file="$(find yocs_cmd_vel_mux)/launch/cmd_vel_mux.launch">
-		<arg name="config_file" value="$(find wild_thumper)/cfg/cmd_vel_mux.yaml" />
+		<arg name="config_file" value="$(find wild_thumper)/config/cmd_vel_mux.yaml" />
 		<arg name="nodelet_manager_name" value="nodelet_manager" />
 	</include>
 </launch>

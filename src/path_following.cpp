@@ -43,7 +43,7 @@ class PathFollower
 	PathFollower() : it(nh)
 	{
 		ros::NodeHandle pnh("~");
-		FileStorage fs(ros::package::getPath("wild_thumper") + "/cfg/transformation_matrix.yml", FileStorage::READ);
+		FileStorage fs(ros::package::getPath("wild_thumper") + "/config/transformation_matrix.yml", FileStorage::READ);
 		dynamic_reconfigure::Server<wild_thumper::PathFollowingConfig>::CallbackType f;
 
 		fs["transformation_matrix"] >> transformation_matrix;

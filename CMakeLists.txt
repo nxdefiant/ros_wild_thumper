@@ -67,7 +67,7 @@ generate_messages(
 )
 
 generate_dynamic_reconfigure_options(
-  cfg/path_following.cfg
+  config/path_following.cfg
 )
 
 ###################################
