@@ -5,11 +5,30 @@ TrajectoryPlannerROS:
   max_vel_theta: 0.4
   min_in_place_vel_theta: 0.4
 
-  acc_lim_x: 2.5
+  acc_lim_x: 10.07
   acc_lim_y: 0.0
-  acc_lim_theta: 0.3
+  acc_lim_theta: 12.00
 
   holonomic_robot: false
   meter_scoring: true
 
-  sim_granularity: 0.01
+  xy_goal_tolerance: 0.20
+  yaw_goal_tolerance: 0.3
+
+DWAPlannerROS:
+  acc_lim_x: 10.07
+  acc_lim_y: 0.0
+  acc_lim_th: 12.00
+
+  max_vel_x: 0.5
+  min_vel_x: 0.0 # no backward movement
+  max_vel_y: 0.0
+  min_vel_y: 0.0
+
+  max_trans_vel: 0.5
+  min_trans_vel: 0.2
+  max_rot_vel: 0.4
+  min_rot_vel: 0.3
+
+  xy_goal_tolerance: 0.20
+  yaw_goal_tolerance: 0.3

@@ -5,12 +5,12 @@ local_costmap:
   publish_frequency: 2.0
   static_map: false
   rolling_window: true
-  width: 2.0
-  height: 2.0
+  width: 3.0
+  height: 3.0
   resolution: 0.05
   plugins:
   - {name: obstacle_layer, type: 'costmap_2d::ObstacleLayer'}
-  - {name: range_layer,   type: "range_sensor_layer::RangeSensorLayer"}
+  #- {name: range_layer,   type: "range_sensor_layer::RangeSensorLayer"}
   - {name: inflation_layer, type: 'costmap_2d::InflationLayer'}
 
   range_layer:
