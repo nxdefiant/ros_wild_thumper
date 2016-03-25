@@ -162,6 +162,7 @@ static volatile float cur_speed_rot=0;
 static volatile uint8_t count_test=0;
 static volatile uint8_t front_handicap=0;
 static volatile uint8_t aft_handicap=0;
+static volatile uint8_t error_state=0;
 
 ISR(TWI_vect)
 {
@@ -570,7 +571,7 @@ ISR(TWI_vect)
 					TWI_ACK;
 					break;
 				case 0xA1: // TLE Error status
-					TWDR = ~((PIND & 0x40)>>3 | (PINB & 0x07)) & 0xf;
+					TWDR = error_state;
 					TWI_ACK;
 					break;
 				case 0xA2: // count test
@@ -669,6 +670,20 @@ static void update_motor(void) {
 	static int16_t m2_old=SHRT_MIN;
 	static int16_t m3_old=SHRT_MIN;
 	static int16_t m4_old=SHRT_MIN;
+
+	error_state = ~((PIND & 0x40)>>3 | (PINB & 0x07)) & 0xf;
+
+	// if error and running: stop
+	if (bit_is_set(error_state, 0) && m1_old != 0) motor1 = 0;
+	if (bit_is_set(error_state, 1) && m2_old != 0) motor2 = 0;
+	if (bit_is_set(error_state, 2) && m3_old != 0) motor3 = 0;
+	if (bit_is_set(error_state, 3) && m4_old != 0) motor4 = 0;
+
+	// if we start motor in error state: start with full power
+	if (bit_is_set(error_state, 0) && m1_old == 0 && motor1 != 0) motor1 = 255;
+	if (bit_is_set(error_state, 1) && m2_old == 0 && motor2 != 0) motor2 = 255;
+	if (bit_is_set(error_state, 2) && m3_old == 0 && motor3 != 0) motor3 = 255;
+	if (bit_is_set(error_state, 3) && m4_old == 0 && motor4 != 0) motor4 = 255;
 
 	if (m1_old != motor1) { // update only when changed
 		if (motor1 == 0) {
