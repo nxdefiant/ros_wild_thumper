@@ -101,9 +101,9 @@
 #define TWI_RESET	TWCR &= ~((1 << TWSTO) | (1 << TWEN)); TWI_ACK
 #define TWI_NAK		TWCR = (1<<TWINT) | (1<<TWEN) | (1<<TWIE)
 
-#define KP 0.009
-#define KI 0.051429
-#define KD 0.000378
+#define KP 0.045
+#define KI 2.298
+#define KD 0.0004
 #define PID_T 0.01
 // wheel diameter=12cm, encoder=48cpr, gear ratio=1:34, real wheel diameter: 0.12454m
 #define STEP_PER_M_AVG 4171.4
@@ -674,16 +674,16 @@ static void update_motor(void) {
 	error_state = ~((PIND & 0x40)>>3 | (PINB & 0x07)) & 0xf;
 
 	// if error and running: stop
-	if (bit_is_set(error_state, 0) && m1_old != 0) motor1 = 0;
-	if (bit_is_set(error_state, 1) && m2_old != 0) motor2 = 0;
-	if (bit_is_set(error_state, 2) && m3_old != 0) motor3 = 0;
-	if (bit_is_set(error_state, 3) && m4_old != 0) motor4 = 0;
+	if (motor1_mode == MOTOR_PID && bit_is_set(error_state, 0) && m1_old != 0) motor1 = 0;
+	if (motor2_mode == MOTOR_PID && bit_is_set(error_state, 1) && m2_old != 0) motor2 = 0;
+	if (motor3_mode == MOTOR_PID && bit_is_set(error_state, 2) && m3_old != 0) motor3 = 0;
+	if (motor4_mode == MOTOR_PID && bit_is_set(error_state, 3) && m4_old != 0) motor4 = 0;
 
 	// if we start motor in error state: start with full power
-	if (bit_is_set(error_state, 0) && m1_old == 0 && motor1 != 0) motor1 = 255;
-	if (bit_is_set(error_state, 1) && m2_old == 0 && motor2 != 0) motor2 = 255;
-	if (bit_is_set(error_state, 2) && m3_old == 0 && motor3 != 0) motor3 = 255;
-	if (bit_is_set(error_state, 3) && m4_old == 0 && motor4 != 0) motor4 = 255;
+	if (motor1_mode == MOTOR_PID && bit_is_set(error_state, 0) && m1_old == 0 && motor1 != 0) motor1 = 255;
+	if (motor2_mode == MOTOR_PID && bit_is_set(error_state, 1) && m2_old == 0 && motor2 != 0) motor2 = 255;
+	if (motor3_mode == MOTOR_PID && bit_is_set(error_state, 2) && m3_old == 0 && motor3 != 0) motor3 = 255;
+	if (motor4_mode == MOTOR_PID && bit_is_set(error_state, 3) && m4_old == 0 && motor4 != 0) motor4 = 255;
 
 	if (m1_old != motor1) { // update only when changed
 		if (motor1 == 0) {
@@ -844,7 +844,7 @@ static void update_pid(void) {
 		} else {
 			int16_t e = speed1_wish - speed1;
 			esum1+=e;
-			motor1 += KP*e + KI*PID_T*esum1 + KD/PID_T*(e - eold1);
+			motor1 = KP*e + KI*PID_T*esum1 + KD/PID_T*(e - eold1);
 			eold1 = e;
 
                         if (motor1 > 255) motor1 = 255;
@@ -859,7 +859,7 @@ static void update_pid(void) {
 		} else {
 			int16_t e = speed2_wish - speed2;
 			esum2+=e;
-			motor2 += KP*e + KI*PID_T*esum2 + KD/PID_T*(e - eold2);
+			motor2 = KP*e + KI*PID_T*esum2 + KD/PID_T*(e - eold2);
 			eold2 = e;
 
                         if (motor2 > 255) motor2 = 255;
@@ -874,7 +874,7 @@ static void update_pid(void) {
 		} else {
 			int16_t e = speed3_wish - speed3;
 			esum3+=e;
-			motor3 += KP*e + KI*PID_T*esum3 + KD/PID_T*(e - eold3);
+			motor3 = KP*e + KI*PID_T*esum3 + KD/PID_T*(e - eold3);
 			eold3 = e;
 
                         if (motor3 > 255) motor3 = 255;
@@ -889,7 +889,7 @@ static void update_pid(void) {
 		} else {
 			int16_t e = speed4_wish - speed4;
 			esum4+=e;
-			motor4 += KP*e + KI*PID_T*esum4 + KD/PID_T*(e - eold4);
+			motor4 = KP*e + KI*PID_T*esum4 + KD/PID_T*(e - eold4);
 			eold4 = e;
 
                         if (motor4 > 255) motor4 = 255;
