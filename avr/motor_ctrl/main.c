@@ -673,17 +673,34 @@ static void update_motor(void) {
 
 	error_state = ~((PIND & 0x40)>>3 | (PINB & 0x07)) & 0xf;
 
-	// if error and running: stop
-	if (motor1_mode == MOTOR_PID && bit_is_set(error_state, 0) && m1_old != 0) motor1 = 0;
-	if (motor2_mode == MOTOR_PID && bit_is_set(error_state, 1) && m2_old != 0) motor2 = 0;
-	if (motor3_mode == MOTOR_PID && bit_is_set(error_state, 2) && m3_old != 0) motor3 = 0;
-	if (motor4_mode == MOTOR_PID && bit_is_set(error_state, 3) && m4_old != 0) motor4 = 0;
-
-	// if we start motor in error state: start with full power
-	if (motor1_mode == MOTOR_PID && bit_is_set(error_state, 0) && m1_old == 0 && motor1 != 0) motor1 = 255;
-	if (motor2_mode == MOTOR_PID && bit_is_set(error_state, 1) && m2_old == 0 && motor2 != 0) motor2 = 255;
-	if (motor3_mode == MOTOR_PID && bit_is_set(error_state, 2) && m3_old == 0 && motor3 != 0) motor3 = 255;
-	if (motor4_mode == MOTOR_PID && bit_is_set(error_state, 3) && m4_old == 0 && motor4 != 0) motor4 = 255;
+	if (motor1_mode == MOTOR_PID && bit_is_set(error_state, 0)) {
+		// if error and running: stop
+	      	if (m1_old != 0) motor1 = 0;
+		// if we start motor in error state: start with full power
+		else if (motor1 > 0) motor1 = 255;
+		else if (motor1 < 0) motor1 = -255;
+	}
+	if (motor2_mode == MOTOR_PID && bit_is_set(error_state, 1)) {
+		// if error and running: stop
+	      	if (m2_old != 0) motor2 = 0;
+		// if we start motor in error state: start with full power
+		else if (motor2 > 0) motor2 = 255;
+		else if (motor2 < 0) motor2 = -255;
+	}
+	if (motor3_mode == MOTOR_PID && bit_is_set(error_state, 2)) {
+		// if error and running: stop
+	      	if (m3_old != 0) motor3 = 0;
+		// if we start motor in error state: start with full power
+		else if (motor3 > 0) motor3 = 255;
+		else if (motor3 < 0) motor3 = -255;
+	}
+	if (motor4_mode == MOTOR_PID && bit_is_set(error_state, 3)) {
+		// if error and running: stop
+	      	if (m4_old != 0) motor4 = 0;
+		// if we start motor in error state: start with full power
+		else if (motor4 > 0) motor4 = 255;
+		else if (motor4 < 0) motor4 = -255;
+	}
 
 	if (m1_old != motor1) { // update only when changed
 		if (motor1 == 0) {
