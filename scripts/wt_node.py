@@ -64,11 +64,9 @@ class MoveBase:
 		self.cmd_vel = None
 		self.set_speed(0, 0)
 		rospy.loginfo("Init done")
-		i2c_write_reg(0x50, 0x90, struct.pack("BB", 1, 1)) # switch direction
 		self.handicap_last = (-1, -1)
 		self.pStripe = LPD8806(1, 0, 12)
 		rospy.Subscriber("cmd_vel_out", Twist, self.cmdVelReceived)
-		rospy.Subscriber("imu", Imu, self.imuReceived)
 		rospy.Subscriber("led_stripe", LedStripe, self.led_stripe_received)
 		self.run()
 	
@@ -94,24 +92,6 @@ class MoveBase:
 				self.set_speed(self.cmd_vel[0], self.cmd_vel[1])
 				self.cmd_vel = None
 			rate.sleep()
-
-	def set_motor_handicap(self, front, aft): # percent
-		if front > 100: front = 100
-		if aft > 100: aft = 100
-		if self.handicap_last != (front, aft):
-			i2c_write_reg(0x50, 0x94, struct.pack(">bb", front, aft))
-			self.handicap_last = (front, aft)
-
-	def imuReceived(self, msg):
-		(roll, pitch, yaw) = tf.transformations.euler_from_quaternion(msg.orientation.__getstate__())
-		if pitch > 30*pi/180:
-			val = (100.0/60)*abs(pitch)*180/pi
-			self.set_motor_handicap(int(val), 0)
-		elif pitch < -30*pi/180:
-			val = (100.0/60)*abs(pitch)*180/pi
-			self.set_motor_handicap(0, int(val))
-		else:
-			self.set_motor_handicap(0, 0)
 
 	def get_reset(self):
 		reset = struct.unpack(">B", i2c_read_reg(0x50, 0xA0, 1))[0]
