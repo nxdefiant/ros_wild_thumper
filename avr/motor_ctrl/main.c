@@ -14,6 +14,10 @@
  * 0x02 Motor 1 PWM LSB
  * 0x03 Motor 2 PWM MSB
  * 0x04 Motor 2 PWM LSB
+ * 0x05 Motor 3 PWM MSB
+ * 0x06 Motor 3 PWM LSB
+ * 0x07 Motor 4 PWM MSB
+ * 0x08 Motor 4 PWM LSB
  * free
  * 0x10 Hall 1 MSB
  * 0x11 Hall 1 LSB
@@ -28,6 +32,10 @@
  * 0x21 Motor 1 speed wish LSB
  * 0x22 Motor 2 speed wish MSB
  * 0x23 Motor 2 speed wish LSB
+ * 0x24 Motor 3 speed wish MSB
+ * 0x25 Motor 3 speed wish LSB
+ * 0x26 Motor 4 speed wish MSB
+ * 0x27 Motor 4 speed wish LSB
  * 0x28 Left speed wish (m/s) MSB
  * 0x29 Left speed wish (m/s)
  * 0x2A Left speed wish (m/s)
@@ -40,6 +48,10 @@
  * 0x31 Motor 1 speed LSB
  * 0x32 Motor 2 speed MSB
  * 0x33 Motor 2 speed LSB
+ * 0x34 Motor 3 speed MSB
+ * 0x35 Motor 3 speed LSB
+ * 0x36 Motor 4 speed MSB
+ * 0x37 Motor 4 speed LSB
  * 0x38 Speed (m/s) MSB
  * 0x39 Speed (m/s)
  * 0x3A Speed (m/s)
@@ -72,9 +84,13 @@
  * free
  * 0x90 Motor 1 switch
  * 0x91 Motor 2 switch
+ * 0x92 Motor 3 switch
+ * 0x93 Motor 4 switch
+ * 0x94 Front Handicap
+ * 0x95 Aft Handicap
  * free
  * 0xA0 Reset reason
- * 0xA1 Error status
+ * 0xA1 TLE Error status
  * 0xA2 count test
  * free
  * 0xff Bootloader
@@ -115,29 +131,37 @@ static volatile uint8_t ireg=0;
 static volatile uint8_t bootloader=0;
 static volatile int16_t motor1=0; // -255..+255
 static volatile int16_t motor2=0;
+static volatile int16_t motor3=0;
+static volatile int16_t motor4=0;
 static volatile int16_t pos1=0; // step
 static volatile int16_t pos2=0;
 static volatile int16_t pos3=0;
 static volatile int16_t pos4=0;
 static volatile enum mode motor1_mode=MOTOR_MANUAL;
 static volatile enum mode motor2_mode=MOTOR_MANUAL;
+static volatile enum mode motor3_mode=MOTOR_MANUAL;
+static volatile enum mode motor4_mode=MOTOR_MANUAL;
 static volatile uint8_t motor1_switch=0;
-static volatile uint8_t motor2_switch=1;
+static volatile uint8_t motor2_switch=0;
+static volatile uint8_t motor3_switch=0;
+static volatile uint8_t motor4_switch=0;
 static volatile int16_t speed1_wish=0; // step/s
 static volatile int16_t speed2_wish=0;
+static volatile int16_t speed3_wish=0;
+static volatile int16_t speed4_wish=0;
 static volatile uint8_t run_update=0;
 static volatile int16_t speed1=0; // step/s
 static volatile int16_t speed2=0;
 static volatile int16_t speed3=0;
 static volatile int16_t speed4=0;
-static volatile int16_t speed_l=0;
-static volatile int16_t speed_r=0;
 static volatile ufloat_t pos_x={0.0};
 static volatile ufloat_t pos_y={0.0};
 static volatile ufloat_t angle={0.0};
 static volatile float cur_speed_lin=0;
 static volatile float cur_speed_rot=0;
 static volatile uint8_t count_test=0;
+static volatile uint8_t front_handicap=0;
+static volatile uint8_t aft_handicap=0;
 static volatile uint8_t error_state=0;
 
 ISR(TWI_vect)
@@ -178,6 +202,24 @@ ISR(TWI_vect)
 					motor2_mode = MOTOR_MANUAL;
 					TWI_ACK;
 					break;
+				case 0x05: // Motor 3 MSB
+					tmp = TWDR;
+					TWI_ACK;
+					break;
+				case 0x06: // Motor 3 LSB
+					motor3 = tmp<<8 | TWDR;
+					motor3_mode = MOTOR_MANUAL;
+					TWI_ACK;
+					break;
+				case 0x07: // Motor 4 MSB
+					tmp = TWDR;
+					TWI_ACK;
+					break;
+				case 0x08: // Motor 4 LSB
+					motor4 = tmp<<8 | TWDR;
+					motor4_mode = MOTOR_MANUAL;
+					TWI_ACK;
+					break;
 				case 0x20: // Motor 1 speed wish MSB
 					tmp = TWDR;
 					TWI_ACK;
@@ -194,6 +236,24 @@ ISR(TWI_vect)
 				case 0x23: // Motor 2 speed wish LSB
 					speed2_wish = tmp<<8 | TWDR;
 					motor2_mode = MOTOR_PID;
+					TWI_ACK;
+					break;
+				case 0x24: // Motor 3 speed wish MSB
+					tmp = TWDR;
+					TWI_ACK;
+					break;
+				case 0x25: // Motor 3 speed wish LSB
+					speed3_wish = tmp<<8 | TWDR;
+					motor3_mode = MOTOR_PID;
+					TWI_ACK;
+					break;
+				case 0x26: // Motor 4 speed wish MSB
+					tmp = TWDR;
+					TWI_ACK;
+					break;
+				case 0x27: // Motor 4 speed wish LSB
+					speed4_wish = tmp<<8 | TWDR;
+					motor4_mode = MOTOR_PID;
 					TWI_ACK;
 					break;
 				case 0x28: // Left speed wish MSB
@@ -279,6 +339,24 @@ ISR(TWI_vect)
 					motor2_switch = TWDR;
 					TWI_ACK;
 					break;
+				case 0x92: // Motor 3 switch
+					motor3_switch = TWDR;
+					TWI_ACK;
+					break;
+				case 0x93: // Motor 4 switch
+					motor4_switch = TWDR;
+					TWI_ACK;
+					break;
+				case 0x94: // Front Handicap
+					front_handicap = TWDR;
+					cmd_vel.bUpdate = 1;
+					TWI_ACK;
+					break;
+				case 0x95: // Aft Handicap
+					aft_handicap = TWDR;
+					cmd_vel.bUpdate = 1;
+					TWI_ACK;
+					break;
 				case 0xff: // bootloader
 					bootloader = TWDR;
 				default:
@@ -295,6 +373,14 @@ ISR(TWI_vect)
 					break;
 				case 0x04: // Motor 2 PWM
 					TWDR = OCR1B;
+					TWI_ACK;
+					break;
+				case 0x06: // Motor 3 PWM
+					TWDR = OCR2;
+					TWI_ACK;
+					break;
+				case 0x08: // Motor 4 PWM
+					TWDR = OCR0;
 					TWI_ACK;
 					break;
 				case 0x10: // Hall 1 MSB
@@ -347,6 +433,22 @@ ISR(TWI_vect)
 					break;
 				case 0x23: // Motor 2 speed wish LSB
 					TWDR = speed2_wish;
+					TWI_ACK;
+					break;
+				case 0x24: // Motor 3 speed wish MSB
+					TWDR = speed3_wish>>8;
+					TWI_ACK;
+					break;
+				case 0x25: // Motor 3 speed wish LSB
+					TWDR = speed3_wish;
+					TWI_ACK;
+					break;
+				case 0x26: // Motor 4 speed wish MSB
+					TWDR = speed4_wish>>8;
+					TWI_ACK;
+					break;
+				case 0x27: // Motor 4 speed wish LSB
+					TWDR = speed4_wish;
 					TWI_ACK;
 					break;
 				case 0x30: // Motor 1 speed MSB
@@ -500,8 +602,8 @@ static void update_hall1(void) {
 	diff = oldstatus - new;				// difference last - new
 	if (diff & 0x1) {				// bit 0 = value (1)
 		oldstatus = new;					// store new as next last
-		if (motor1_switch) pos1 -= (diff & 2) - 1;		// bit 1 = direction (+/-)
-		else pos1 += (diff & 2) - 1;
+		if (motor1_switch) pos1 += (diff & 2) - 1;		// bit 1 = direction (+/-)
+		else pos1 -= (diff & 2) - 1;
 	}
 }
 
@@ -519,7 +621,7 @@ static void update_hall2(void) {
 	diff = oldstatus - new;				// difference last - new
 	if (diff & 0x1) {				// bit 0 = value (1)
 		oldstatus = new;					// store new as next last
-		if (motor1_switch) pos2 -= (diff & 2) - 1;		// bit 1 = direction (+/-)
+		if (motor2_switch) pos2 -= (diff & 2) - 1;		// bit 1 = direction (+/-)
 		else pos2 += (diff & 2) - 1;
 	}
 }
@@ -538,8 +640,8 @@ static void update_hall3(void) {
 	diff = oldstatus - new;				// difference last - new
 	if (diff & 0x1) {				// bit 0 = value (1)
 		oldstatus = new;					// store new as next last
-		if (motor2_switch) pos3 += (diff & 2) - 1;		// bit 1 = direction (+/-)
-		else pos3 -= (diff & 2) - 1;
+		if (motor3_switch) pos3 -= (diff & 2) - 1;		// bit 1 = direction (+/-)
+		else pos3 += (diff & 2) - 1;
 	}
 }
 
@@ -557,8 +659,8 @@ static void update_hall4(void) {
 	diff = oldstatus - new;				// difference last - new
 	if (diff & 0x1) {				// bit 0 = value (1)
 		oldstatus = new;					// store new as next last
-		if (motor2_switch) pos4 -= (diff & 2) - 1;		// bit 1 = direction (+/-)
-		else pos4 += (diff & 2) - 1;
+		if (motor4_switch) pos4 += (diff & 2) - 1;		// bit 1 = direction (+/-)
+		else pos4 -= (diff & 2) - 1;
 	}
 }
 
@@ -566,8 +668,10 @@ static void update_hall4(void) {
 static void update_motor(void) {
 	static int16_t m1_old=SHRT_MIN;
 	static int16_t m2_old=SHRT_MIN;
+	static int16_t m3_old=SHRT_MIN;
+	static int16_t m4_old=SHRT_MIN;
 
-	error_state = ~(PINB & 0x03);
+	error_state = ~((PIND & 0x40)>>3 | (PINB & 0x07)) & 0xf;
 
 	if (motor1_mode == MOTOR_PID && bit_is_set(error_state, 0)) {
 		// if error and running: stop
@@ -583,15 +687,28 @@ static void update_motor(void) {
 		else if (motor2 > 0) motor2 = 255;
 		else if (motor2 < 0) motor2 = -255;
 	}
+	if (motor3_mode == MOTOR_PID && bit_is_set(error_state, 2)) {
+		// if error and running: stop
+	      	if (m3_old != 0) motor3 = 0;
+		// if we start motor in error state: start with full power
+		else if (motor3 > 0) motor3 = 255;
+		else if (motor3 < 0) motor3 = -255;
+	}
+	if (motor4_mode == MOTOR_PID && bit_is_set(error_state, 3)) {
+		// if error and running: stop
+	      	if (m4_old != 0) motor4 = 0;
+		// if we start motor in error state: start with full power
+		else if (motor4 > 0) motor4 = 255;
+		else if (motor4 < 0) motor4 = -255;
+	}
 
 	if (m1_old != motor1) { // update only when changed
 		if (motor1 == 0) {
 			// stop
-			PORTC &= ~(1 << 3) & ~(1 << 2);
+			PORTC |= (1 << 3) | (1 << 2);
 		} else if ((!motor1_switch && motor1 > 0) || (motor1_switch && motor1 < 0)) {
 			// forward
-			PORTC |=  (1 << 2);
-			PORTC &= ~(1 << 3);
+			PORTC &= ~(1 << 3) & ~(1 << 2);
 		} else { // motor1 < 0
 			// backward
 			PORTC &= ~(1 << 2);
@@ -605,11 +722,10 @@ static void update_motor(void) {
 	if (m2_old != motor2) { // update only when changed
 		if (motor2 == 0) {
 			// stop
-			PORTC &= ~(1 << 5) & ~(1 << 4);
+			PORTC |= (1 << 5) | (1 << 4);
 		} else if ((!motor2_switch && motor2 > 0) || (motor2_switch && motor2 < 0)) {
 			// forward
-			PORTC |=  (1 << 4);
-			PORTC &= ~(1 << 5);
+			PORTC &= ~(1 << 5) & ~(1 << 4);
 		} else { // motor2 < 0
 			// backward
 			PORTC &= ~(1 << 4);
@@ -618,6 +734,40 @@ static void update_motor(void) {
 
 		m2_old = motor2;
 		OCR1B = abs(motor2);
+	}
+
+	if (m3_old != motor3) { // update only when changed
+		if (motor3 == 0) {
+			// stop
+			PORTC |= (1 << 7) | (1 << 6);
+		} else if ((!motor3_switch && motor3 > 0) || (motor3_switch && motor3 < 0)) {
+			// forward
+			PORTC &= ~(1 << 7) & ~(1 << 6);
+		} else { // motor3 < 0
+			// backward
+			PORTC &= ~(1 << 6);
+			PORTC |=  (1 << 7);
+		}
+
+		m3_old = motor3;
+		OCR2 = abs(motor3);
+	}
+
+	if (m4_old != motor4) { // update only when changed
+		if (motor4 == 0) {
+			// stop
+			PORTD |= (1 << 3) | (1 << 2);
+		} else if ((!motor4_switch && motor4 > 0) || (motor4_switch && motor4 < 0)) {
+			// forward
+			PORTD &= ~(1 << 3) & ~(1 << 2);
+		} else { // motor4 < 0
+			// backward
+			PORTD &= ~(1 << 2);
+			PORTD |=  (1 << 3);
+		}
+
+		m4_old = motor4;
+		OCR0 = abs(motor4);
 	}
 }
 
@@ -633,6 +783,7 @@ static void update_pos(void) {
 	int16_t pos4_diff;
 	float diff_left_m, diff_right_m, angle_diff, translation;
 	float pos_x_new, pos_y_new, angle_new;
+	int16_t speed_l, speed_r;
 	float tmp_speed_lin, tmp_speed_rot;
 	int16_t cur_pos1, cur_pos2, cur_pos3, cur_pos4;
 	int16_t new_speed1, new_speed2, new_speed3, new_speed4;
@@ -695,8 +846,12 @@ static void update_pos(void) {
 static void update_pid(void) {
 	static int16_t eold1=0;
 	static int16_t eold2=0;
+	static int16_t eold3=0;
+	static int16_t eold4=0;
 	static int32_t esum1=0;
 	static int32_t esum2=0;
+	static int32_t esum3=0;
+	static int32_t esum4=0;
 
 	if (motor1_mode == MOTOR_PID) {
 		if (speed1_wish == 0) {
@@ -704,7 +859,7 @@ static void update_pid(void) {
 			eold1 = 0;
 			esum1 = 0;
 		} else {
-			int16_t e = speed1_wish - speed_l;
+			int16_t e = speed1_wish - speed1;
 			esum1+=e;
 			motor1 = KP*e + KI*PID_T*esum1 + KD/PID_T*(e - eold1);
 			eold1 = e;
@@ -719,13 +874,43 @@ static void update_pid(void) {
 			eold2 = 0;
 			esum2 = 0;
 		} else {
-			int16_t e = speed2_wish - speed_r;
+			int16_t e = speed2_wish - speed2;
 			esum2+=e;
 			motor2 = KP*e + KI*PID_T*esum2 + KD/PID_T*(e - eold2);
 			eold2 = e;
 
                         if (motor2 > 255) motor2 = 255;
 			else if (motor2 < -255) motor2 = -255;
+		}
+	}
+	if (motor3_mode == MOTOR_PID) {
+		if (speed3_wish == 0) {
+			motor3 = 0;
+			eold3 = 0;
+			esum3 = 0;
+		} else {
+			int16_t e = speed3_wish - speed3;
+			esum3+=e;
+			motor3 = KP*e + KI*PID_T*esum3 + KD/PID_T*(e - eold3);
+			eold3 = e;
+
+                        if (motor3 > 255) motor3 = 255;
+			else if (motor3 < -255) motor3 = -255;
+		}
+	}
+	if (motor4_mode == MOTOR_PID) {
+		if (speed4_wish == 0) {
+			motor4 = 0;
+			eold4 = 0;
+			esum4 = 0;
+		} else {
+			int16_t e = speed4_wish - speed4;
+			esum4+=e;
+			motor4 = KP*e + KI*PID_T*esum4 + KD/PID_T*(e - eold4);
+			eold4 = e;
+
+                        if (motor4 > 255) motor4 = 255;
+			else if (motor4 < -255) motor4 = -255;
 		}
 	}
 }
@@ -746,6 +931,9 @@ int main(void) {
 	DDRB = (1 << 3);
 	DDRC = (1 << 7) | (1 << 6) | (1 << 5) | (1 << 4) | (1 << 3) | (1 << 2);
 	DDRD = (1 << 7) | (1 << 5) | (1 << 4) | (1 << 3) | (1 << 2);
+	// Pullup TLEs EF
+	PORTB = (1 << 0) | (1 << 1) | (1 << 2);
+	PORTD = (1 << 6);
 
 	bootloader = 0x00;
 	setup_uart(9600);
@@ -756,12 +944,24 @@ int main(void) {
 	TWI_RESET;
 
 	// Motor 1 & 2
-	// Timer 1: Fast PWM non-inverting mode, Top=256 => 15.625kHz
+	// Timer 1: Fast PWM inverting mode, Top=256 => 15.625kHz
 	// Prescaler=1
-	TCCR1A = (1 << COM1A1) | (1 << COM1B1) | (1 << WGM10);
+	TCCR1A = (1 << COM1A1) | (1 << COM1B1) | (1 << COM1A0) | (1 << COM1B0) | (1 << WGM10);
 	TCCR1B = (1 << WGM12) | (1 << CS10);
 	OCR1A = 0;
 	OCR1B = 0;
+
+	// Motor 3
+	// Timer 2: Fast PWM inverting mode, Top=256
+	// Prescaler=1
+	TCCR2 = (1 << WGM21) | (1 << WGM20) | (1 << COM21) | (1 << COM20) | (1 << CS20);
+	OCR2 = 0;
+
+	// Motor 4
+	// Timer 0: Fast PWM inverting mode, Top=256
+	// Prescaler=1
+	TCCR0 = (1 << WGM01) | (1 << WGM00) | (1 << COM01) | (1 << COM00) | (1 << CS00);
+	OCR0 = 0;
 
 	printf("\r\nStart\r\n");
 
@@ -799,10 +999,24 @@ int main(void) {
 			speed_wish_left*=STEP_PER_M_LEFT;
 			speed_wish_right*=STEP_PER_M_RIGHT;
 
-			speed1_wish = speed_wish_left;
-			speed2_wish = speed_wish_right;
+			if (aft_handicap > 0) {
+				speed1_wish = speed_wish_left * (100-aft_handicap)/100.0;
+				speed4_wish = speed_wish_right * (100-aft_handicap)/100.0;
+			} else {
+				speed1_wish = speed_wish_left;
+				speed4_wish = speed_wish_right;
+			}
+			if (front_handicap > 0) {
+				speed2_wish = speed_wish_left * (100-front_handicap)/100.0;
+				speed3_wish = speed_wish_right * (100-front_handicap)/100.0;
+			} else {
+				speed2_wish = speed_wish_left;
+				speed3_wish = speed_wish_right;
+			}
 			motor1_mode = MOTOR_PID;
 			motor2_mode = MOTOR_PID;
+			motor3_mode = MOTOR_PID;
+			motor4_mode = MOTOR_PID;
 		}
 
 		if (run_update >= 156) { // ~100Hz
