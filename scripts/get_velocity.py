@@ -13,4 +13,4 @@ for line in f:
 		continue
 	l.append(float(line))
 
-print "avg=%.2f, var=%f" % (sum(l)/len(l), np.var(l))
+print "avg = %.2f, var = %f" % (sum(l)/len(l), np.var(l))
