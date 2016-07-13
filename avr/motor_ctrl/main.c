@@ -90,7 +90,7 @@
  * 0x95 Aft Handicap
  * free
  * 0xA0 Reset reason
- * 0xA1 TLE Error status
+ * 0xA1 Error status
  * 0xA2 count test
  * free
  * 0xff Bootloader
@@ -141,8 +141,8 @@ static volatile enum mode motor1_mode=MOTOR_MANUAL;
 static volatile enum mode motor2_mode=MOTOR_MANUAL;
 static volatile enum mode motor3_mode=MOTOR_MANUAL;
 static volatile enum mode motor4_mode=MOTOR_MANUAL;
-static volatile uint8_t motor1_switch=0;
-static volatile uint8_t motor2_switch=0;
+static volatile uint8_t motor1_switch=1;
+static volatile uint8_t motor2_switch=1;
 static volatile uint8_t motor3_switch=0;
 static volatile uint8_t motor4_switch=0;
 static volatile int16_t speed1_wish=0; // step/s
@@ -371,16 +371,32 @@ ISR(TWI_vect)
 					TWDR = OCR1A;
 					TWI_ACK;
 					break;
+				case 0x03: // Dummy to allow continous read
+					TWDR = 0;
+					TWI_ACK;
+					break;
 				case 0x04: // Motor 2 PWM
 					TWDR = OCR1B;
+					TWI_ACK;
+					break;
+				case 0x05: // Dummy to allow continous read
+					TWDR = 0;
 					TWI_ACK;
 					break;
 				case 0x06: // Motor 3 PWM
 					TWDR = OCR2;
 					TWI_ACK;
 					break;
+				case 0x07: // Dummy to allow continous read
+					TWDR = 0;
+					TWI_ACK;
+					break;
 				case 0x08: // Motor 4 PWM
 					TWDR = OCR0;
+					TWI_ACK;
+					break;
+				case 0x09: // Dummy to allow continous read
+					TWDR = 0;
 					TWI_ACK;
 					break;
 				case 0x10: // Hall 1 MSB
@@ -570,7 +586,7 @@ ISR(TWI_vect)
 					MCUCSR = 0x0;
 					TWI_ACK;
 					break;
-				case 0xA1: // TLE Error status
+				case 0xA1: // Error status
 					TWDR = error_state;
 					TWI_ACK;
 					break;
@@ -673,46 +689,22 @@ static void update_motor(void) {
 
 	error_state = ~((PIND & 0x40)>>3 | (PINB & 0x07)) & 0xf;
 
-	if (motor1_mode == MOTOR_PID && bit_is_set(error_state, 0)) {
-		// if error and running: stop
-	      	if (m1_old != 0) motor1 = 0;
-		// if we start motor in error state: start with full power
-		else if (motor1 > 0) motor1 = 255;
-		else if (motor1 < 0) motor1 = -255;
-	}
-	if (motor2_mode == MOTOR_PID && bit_is_set(error_state, 1)) {
-		// if error and running: stop
-	      	if (m2_old != 0) motor2 = 0;
-		// if we start motor in error state: start with full power
-		else if (motor2 > 0) motor2 = 255;
-		else if (motor2 < 0) motor2 = -255;
-	}
-	if (motor3_mode == MOTOR_PID && bit_is_set(error_state, 2)) {
-		// if error and running: stop
-	      	if (m3_old != 0) motor3 = 0;
-		// if we start motor in error state: start with full power
-		else if (motor3 > 0) motor3 = 255;
-		else if (motor3 < 0) motor3 = -255;
-	}
-	if (motor4_mode == MOTOR_PID && bit_is_set(error_state, 3)) {
-		// if error and running: stop
-	      	if (m4_old != 0) motor4 = 0;
-		// if we start motor in error state: start with full power
-		else if (motor4 > 0) motor4 = 255;
-		else if (motor4 < 0) motor4 = -255;
-	}
-
 	if (m1_old != motor1) { // update only when changed
 		if (motor1 == 0) {
 			// stop
-			PORTC |= (1 << 3) | (1 << 2);
+			PORTC &= ~(1 << 3) & ~(1 << 2);
 		} else if ((!motor1_switch && motor1 > 0) || (motor1_switch && motor1 < 0)) {
 			// forward
-			PORTC &= ~(1 << 3) & ~(1 << 2);
+			uint8_t tmp=PORTC;
+			tmp &= ~(1 << 3);
+			tmp |=  (1 << 2);
+			PORTC = tmp;
 		} else { // motor1 < 0
 			// backward
-			PORTC &= ~(1 << 2);
-			PORTC |=  (1 << 3);
+			uint8_t tmp=PORTC;
+			tmp &= ~(1 << 2);
+			tmp |=  (1 << 3);
+			PORTC = tmp;
 		}
 
 		m1_old = motor1;
@@ -722,14 +714,19 @@ static void update_motor(void) {
 	if (m2_old != motor2) { // update only when changed
 		if (motor2 == 0) {
 			// stop
-			PORTC |= (1 << 5) | (1 << 4);
+			PORTC &= ~(1 << 5) & ~(1 << 4);
 		} else if ((!motor2_switch && motor2 > 0) || (motor2_switch && motor2 < 0)) {
 			// forward
-			PORTC &= ~(1 << 5) & ~(1 << 4);
+			uint8_t tmp=PORTC;
+			tmp &= ~(1 << 5);
+			tmp |=  (1 << 4);
+			PORTC = tmp;
 		} else { // motor2 < 0
 			// backward
-			PORTC &= ~(1 << 4);
-			PORTC |=  (1 << 5);
+			uint8_t tmp=PORTC;
+			tmp &= ~(1 << 4);
+			tmp |=  (1 << 5);
+			PORTC = tmp;
 		}
 
 		m2_old = motor2;
@@ -739,14 +736,19 @@ static void update_motor(void) {
 	if (m3_old != motor3) { // update only when changed
 		if (motor3 == 0) {
 			// stop
-			PORTC |= (1 << 7) | (1 << 6);
+			PORTC &= ~(1 << 7) & ~(1 << 6);
 		} else if ((!motor3_switch && motor3 > 0) || (motor3_switch && motor3 < 0)) {
 			// forward
-			PORTC &= ~(1 << 7) & ~(1 << 6);
+			uint8_t tmp=PORTC;
+			tmp &= ~(1 << 7);
+			tmp |=  (1 << 6);
+			PORTC = tmp;
 		} else { // motor3 < 0
 			// backward
-			PORTC &= ~(1 << 6);
-			PORTC |=  (1 << 7);
+			uint8_t tmp=PORTC;
+			tmp &= ~(1 << 6);
+			tmp |=  (1 << 7);
+			PORTC = tmp;
 		}
 
 		m3_old = motor3;
@@ -756,14 +758,19 @@ static void update_motor(void) {
 	if (m4_old != motor4) { // update only when changed
 		if (motor4 == 0) {
 			// stop
-			PORTD |= (1 << 3) | (1 << 2);
+			PORTD &= ~(1 << 3) & ~(1 << 2);
 		} else if ((!motor4_switch && motor4 > 0) || (motor4_switch && motor4 < 0)) {
 			// forward
-			PORTD &= ~(1 << 3) & ~(1 << 2);
+			uint8_t tmp=PORTD;
+			tmp &= ~(1 << 3);
+			tmp |=  (1 << 2);
+			PORTD = tmp;
 		} else { // motor4 < 0
 			// backward
-			PORTD &= ~(1 << 2);
-			PORTD |=  (1 << 3);
+			uint8_t tmp=PORTD;
+			tmp &= ~(1 << 2);
+			tmp |=  (1 << 3);
+			PORTD = tmp;
 		}
 
 		m4_old = motor4;
@@ -931,7 +938,7 @@ int main(void) {
 	DDRB = (1 << 3);
 	DDRC = (1 << 7) | (1 << 6) | (1 << 5) | (1 << 4) | (1 << 3) | (1 << 2);
 	DDRD = (1 << 7) | (1 << 5) | (1 << 4) | (1 << 3) | (1 << 2);
-	// Pullup TLEs EF
+	// Pullup Diag/Enable
 	PORTB = (1 << 0) | (1 << 1) | (1 << 2);
 	PORTD = (1 << 6);
 
@@ -944,23 +951,23 @@ int main(void) {
 	TWI_RESET;
 
 	// Motor 1 & 2
-	// Timer 1: Fast PWM inverting mode, Top=256 => 15.625kHz
+	// Timer 1: Fast PWM non-inverting mode, Top=255 => 15.625kHz
 	// Prescaler=1
-	TCCR1A = (1 << COM1A1) | (1 << COM1B1) | (1 << COM1A0) | (1 << COM1B0) | (1 << WGM10);
+	TCCR1A = (1 << COM1A1) | (1 << COM1B1) | (1 << WGM10);
 	TCCR1B = (1 << WGM12) | (1 << CS10);
 	OCR1A = 0;
 	OCR1B = 0;
 
 	// Motor 3
-	// Timer 2: Fast PWM inverting mode, Top=256
+	// Timer 2: Fast PWM non-inverting mode, Top=255
 	// Prescaler=1
-	TCCR2 = (1 << WGM21) | (1 << WGM20) | (1 << COM21) | (1 << COM20) | (1 << CS20);
+	TCCR2 = (1 << WGM21) | (1 << WGM20) | (1 << COM21) | (1 << CS20);
 	OCR2 = 0;
 
 	// Motor 4
-	// Timer 0: Fast PWM inverting mode, Top=256
+	// Timer 0: Fast PWM non-inverting mode, Top=255
 	// Prescaler=1
-	TCCR0 = (1 << WGM01) | (1 << WGM00) | (1 << COM01) | (1 << COM00) | (1 << CS00);
+	TCCR0 = (1 << WGM01) | (1 << WGM00) | (1 << COM01) | (1 << CS00);
 	OCR0 = 0;
 
 	printf("\r\nStart\r\n");
