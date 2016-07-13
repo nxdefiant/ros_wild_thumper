@@ -101,9 +101,9 @@
 #define TWI_RESET	TWCR &= ~((1 << TWSTO) | (1 << TWEN)); TWI_ACK
 #define TWI_NAK		TWCR = (1<<TWINT) | (1<<TWEN) | (1<<TWIE)
 
-#define KP 0.045
-#define KI 2.298
-#define KD 0.0004
+#define KP 0.025
+#define KI 2.3
+#define KD 0.0
 #define PID_T 0.01
 // wheel diameter=12cm, encoder=48cpr, gear ratio=1:34, real wheel diameter: 0.12454m
 #define STEP_PER_M_AVG 4171.4
