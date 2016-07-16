@@ -101,8 +101,8 @@
 #define TWI_RESET	TWCR &= ~((1 << TWSTO) | (1 << TWEN)); TWI_ACK
 #define TWI_NAK		TWCR = (1<<TWINT) | (1<<TWEN) | (1<<TWIE)
 
-#define KP 0.025
-#define KI 2.3
+#define KP 0.039
+#define KI 0.08
 #define KD 0.0
 #define PID_T 0.01
 // wheel diameter=12cm, encoder=48cpr, gear ratio=1:34, real wheel diameter: 0.12454m
@@ -172,7 +172,7 @@ ISR(TWI_vect)
 	static ufloat_t tmp_angle;
 
 	switch (TWSR & 0xF8)
-	{  
+	{
 		case 0x60: // start write
 			TWI_ACK;
 			ireg = 0;
@@ -871,7 +871,9 @@ static void update_pid(void) {
 			motor1 = KP*e + KI*PID_T*esum1 + KD/PID_T*(e - eold1);
 			eold1 = e;
 
-                        if (motor1 > 255) motor1 = 255;
+			if (motor1 > 0 && speed1_wish < 0) motor1=0;
+			else if (motor1 < 0 && speed1_wish > 0) motor1=0;
+			else if (motor1 > 255) motor1 = 255;
 			else if (motor1 < -255) motor1 = -255;
 		}
 	}
@@ -886,7 +888,9 @@ static void update_pid(void) {
 			motor2 = KP*e + KI*PID_T*esum2 + KD/PID_T*(e - eold2);
 			eold2 = e;
 
-                        if (motor2 > 255) motor2 = 255;
+			if (motor2 > 0 && speed2_wish < 0) motor2=0;
+			else if (motor2 < 0 && speed2_wish > 0) motor2=0;
+			else if (motor2 > 255) motor2 = 255;
 			else if (motor2 < -255) motor2 = -255;
 		}
 	}
@@ -901,7 +905,9 @@ static void update_pid(void) {
 			motor3 = KP*e + KI*PID_T*esum3 + KD/PID_T*(e - eold3);
 			eold3 = e;
 
-                        if (motor3 > 255) motor3 = 255;
+			if (motor3 > 0 && speed3_wish < 0) motor3=0;
+			else if (motor3 < 0 && speed3_wish > 0) motor3=0;
+			else if (motor3 > 255) motor3 = 255;
 			else if (motor3 < -255) motor3 = -255;
 		}
 	}
@@ -916,7 +922,9 @@ static void update_pid(void) {
 			motor4 = KP*e + KI*PID_T*esum4 + KD/PID_T*(e - eold4);
 			eold4 = e;
 
-                        if (motor4 > 255) motor4 = 255;
+			if (motor4 > 0 && speed4_wish < 0) motor4=0;
+			else if (motor4 < 0 && speed4_wish > 0) motor4=0;
+			else if (motor4 > 255) motor4 = 255;
 			else if (motor4 < -255) motor4 = -255;
 		}
 	}
