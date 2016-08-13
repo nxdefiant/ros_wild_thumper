@@ -790,7 +790,6 @@ static void update_pos(void) {
 	int16_t pos4_diff;
 	float diff_left_m, diff_right_m, angle_diff, translation;
 	float pos_x_new, pos_y_new, angle_new;
-	int16_t speed_l, speed_r;
 	float tmp_speed_lin, tmp_speed_rot;
 	int16_t cur_pos1, cur_pos2, cur_pos3, cur_pos4;
 	int16_t new_speed1, new_speed2, new_speed3, new_speed4;
@@ -825,10 +824,8 @@ static void update_pos(void) {
 	pos_x_new = pos_x.f + cos(angle_new)*translation;
 	pos_y_new = pos_y.f + sin(angle_new)*translation;
 
-	speed_l = (new_speed1+new_speed2)/2;
-	speed_r = (new_speed3+new_speed4)/2;
-	tmp_speed_lin = (speed_l + speed_r)/(2.0*STEP_PER_M_AVG);
-	tmp_speed_rot = (speed_r - speed_l)/(M_PI*WHEEL_DIST*STEP_PER_M_AVG);
+	tmp_speed_lin = translation/PID_T;
+	tmp_speed_rot = angle_diff/PID_T;
 
 	// copy from tmp
 	cli();
@@ -1008,7 +1005,7 @@ int main(void) {
 			cmd_vel.bUpdate = 0;
 			sei();
 
-			speed_wish_right = angle*M_PI*WHEEL_DIST/2 + speed;
+			speed_wish_right = (angle*WHEEL_DIST)/2 + speed;
 			speed_wish_left = speed*2-speed_wish_right;
 
 			speed_wish_left*=STEP_PER_M_LEFT;

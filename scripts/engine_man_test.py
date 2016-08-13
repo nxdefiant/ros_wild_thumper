@@ -14,6 +14,7 @@ def set_pwm(left, right):
 	i2c_write_reg(0x50, 0x7, struct.pack(">h", right))
 
 if __name__ == "__main__":
+	i2c_write_reg(0x50, 0x90, struct.pack("BBBB", 1, 1, 0, 0)) # switch direction
 	set_pwm(int(sys.argv[1]), int(sys.argv[2]))
 
 	while True:
