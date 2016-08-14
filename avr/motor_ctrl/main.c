@@ -687,7 +687,8 @@ static void update_motor(void) {
 	static int16_t m3_old=SHRT_MIN;
 	static int16_t m4_old=SHRT_MIN;
 
-	error_state = ~((PIND & 0x40)>>3 | (PINB & 0x07)) & 0xf;
+	error_state &= 0xf0; // clear lower bits
+	error_state |= ~((PIND & 0x40)>>3 | (PINB & 0x07)) & 0xf;
 
 	if (m1_old != motor1) { // update only when changed
 		if (motor1 == 0) {
@@ -857,11 +858,39 @@ static void update_pid(void) {
 	static int32_t esum3=0;
 	static int32_t esum4=0;
 
+	// protect motors from damage if stalling
+	if (labs(esum1) > 120000 && speed1 == 0) {
+		motor1 = 0;
+		motor1_mode = MOTOR_MANUAL;
+		error_state |= (1<<4);
+		esum1 = 0;
+	}	
+	if (labs(esum2) > 120000 && speed2 == 0) {
+		motor2 = 0;
+		motor2_mode = MOTOR_MANUAL;
+		error_state |= (1<<5);
+		esum2 = 0;
+	}	
+	if (labs(esum3) > 120000 && speed3 == 0) {
+		motor3 = 0;
+		motor3_mode = MOTOR_MANUAL;
+		error_state |= (1<<6);
+		esum3 = 0;
+	}	
+	// protect motors from damage if stalling
+	if (labs(esum4) > 120000 && speed4 == 0) {
+		motor4 = 0;
+		motor4_mode = MOTOR_MANUAL;
+		error_state |= (1<<7);
+		esum4 = 0;
+	}	
+
 	if (motor1_mode == MOTOR_PID) {
 		if (speed1_wish == 0) {
 			motor1 = 0;
 			eold1 = 0;
 			esum1 = 0;
+			error_state &= ~(1<<4);
 		} else {
 			int16_t e = speed1_wish - speed1;
 			esum1+=e;
@@ -879,6 +908,7 @@ static void update_pid(void) {
 			motor2 = 0;
 			eold2 = 0;
 			esum2 = 0;
+			error_state &= ~(1<<5);
 		} else {
 			int16_t e = speed2_wish - speed2;
 			esum2+=e;
@@ -896,6 +926,7 @@ static void update_pid(void) {
 			motor3 = 0;
 			eold3 = 0;
 			esum3 = 0;
+			error_state &= ~(1<<6);
 		} else {
 			int16_t e = speed3_wish - speed3;
 			esum3+=e;
@@ -913,6 +944,7 @@ static void update_pid(void) {
 			motor4 = 0;
 			eold4 = 0;
 			esum4 = 0;
+			error_state &= ~(1<<7);
 		} else {
 			int16_t e = speed4_wish - speed4;
 			esum4+=e;
@@ -1013,17 +1045,17 @@ int main(void) {
 
 			if (aft_handicap > 0) {
 				speed1_wish = speed_wish_left * (100-aft_handicap)/100.0;
-				speed4_wish = speed_wish_right * (100-aft_handicap)/100.0;
+				speed3_wish = speed_wish_right * (100-aft_handicap)/100.0;
 			} else {
 				speed1_wish = speed_wish_left;
-				speed4_wish = speed_wish_right;
+				speed3_wish = speed_wish_right;
 			}
 			if (front_handicap > 0) {
 				speed2_wish = speed_wish_left * (100-front_handicap)/100.0;
-				speed3_wish = speed_wish_right * (100-front_handicap)/100.0;
+				speed4_wish = speed_wish_right * (100-front_handicap)/100.0;
 			} else {
 				speed2_wish = speed_wish_left;
-				speed3_wish = speed_wish_right;
+				speed4_wish = speed_wish_right;
 			}
 			motor1_mode = MOTOR_PID;
 			motor2_mode = MOTOR_PID;

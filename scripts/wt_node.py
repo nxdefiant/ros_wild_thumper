@@ -68,7 +68,7 @@ class MoveBase:
 		self.handicap_last = (-1, -1)
 		self.pStripe = LPD8806(1, 0, 12)
 		rospy.Subscriber("cmd_vel_out", Twist, self.cmdVelReceived)
-		rospy.Subscriber("imu", Imu, self.imuReceived)
+		#rospy.Subscriber("imu", Imu, self.imuReceived)
 		rospy.Subscriber("led_stripe", LedStripe, self.led_stripe_received)
 		self.run()
 	
@@ -80,7 +80,7 @@ class MoveBase:
 		i = 0
 		while not rospy.is_shutdown():
 			#print struct.unpack(">B", i2c_read_reg(0x50, 0xA2, 1))[0] # count test
-			self.get_tle_err()
+			self.get_motor_err()
 			self.get_odom()
 			self.get_voltage()
 			if i % 2:
@@ -141,7 +141,7 @@ class MoveBase:
 		return reset
 
 
-	def get_tle_err(self):
+	def get_motor_err(self):
 		err = struct.unpack(">B", i2c_read_reg(0x50, 0xA1, 1))[0]
 		
 		msg = DiagnosticArray()
@@ -151,10 +151,16 @@ class MoveBase:
 		stat.level = DiagnosticStatus.ERROR if err else DiagnosticStatus.OK
 		stat.message = "0x%02x" % err
 
-		stat.values.append(KeyValue("aft left", str(bool(err & (1 << 0)))))
-		stat.values.append(KeyValue("front left", str(bool(err & (1 << 1)))))
-		stat.values.append(KeyValue("front right", str(bool(err & (1 << 2)))))
-		stat.values.append(KeyValue("aft right", str(bool(err & (1 << 3)))))
+		# Diag
+		stat.values.append(KeyValue("aft left diag", str(bool(err & (1 << 0)))))
+		stat.values.append(KeyValue("front left diag", str(bool(err & (1 << 1)))))
+		stat.values.append(KeyValue("aft right diag", str(bool(err & (1 << 2)))))
+		stat.values.append(KeyValue("front right diag", str(bool(err & (1 << 3)))))
+		# Stall
+		stat.values.append(KeyValue("aft left stall", str(bool(err & (1 << 4)))))
+		stat.values.append(KeyValue("front left stall", str(bool(err & (1 << 5)))))
+		stat.values.append(KeyValue("aft right stall", str(bool(err & (1 << 6)))))
+		stat.values.append(KeyValue("front right stall", str(bool(err & (1 << 7)))))
 
 		msg.status.append(stat)
 		self.pub_diag.publish(msg)
