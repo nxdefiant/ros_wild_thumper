@@ -101,12 +101,12 @@
 #define TWI_RESET	TWCR &= ~((1 << TWSTO) | (1 << TWEN)); TWI_ACK
 #define TWI_NAK		TWCR = (1<<TWINT) | (1<<TWEN) | (1<<TWIE)
 
-#define KP 0.039
-#define KI 0.08
+#define KP 0.06
+#define KI 0.10
 #define KD 0.0
 #define PID_T 0.01
-// wheel diameter=12cm, encoder=48cpr, gear ratio=1:34, real wheel diameter: 0.12454m
-#define STEP_PER_M_AVG 4171.4
+// wheel diameter=12cm, encoder=48cpr, gear ratio=1:47, real wheel diameter: 0.12454m
+#define STEP_PER_M_AVG 5766.1
 #define STEP_PER_M_LEFT (STEP_PER_M_AVG)
 #define STEP_PER_M_RIGHT (STEP_PER_M_AVG)
 #define WHEEL_DIST 0.36923 // Real: 0.252
@@ -149,6 +149,10 @@ static volatile int16_t speed1_wish=0; // step/s
 static volatile int16_t speed2_wish=0;
 static volatile int16_t speed3_wish=0;
 static volatile int16_t speed4_wish=0;
+static volatile int16_t speed1_wish_old=0;
+static volatile int16_t speed2_wish_old=0;
+static volatile int16_t speed3_wish_old=0;
+static volatile int16_t speed4_wish_old=0;
 static volatile uint8_t run_update=0;
 static volatile int16_t speed1=0; // step/s
 static volatile int16_t speed2=0;
@@ -886,10 +890,14 @@ static void update_pid(void) {
 	}	
 
 	if (motor1_mode == MOTOR_PID) {
+		if (speed1_wish != speed1_wish_old) {
+			esum1 = 0;
+			speed1_wish_old = speed1_wish;
+		}
+
 		if (speed1_wish == 0) {
 			motor1 = 0;
 			eold1 = 0;
-			esum1 = 0;
 			error_state &= ~(1<<4);
 		} else {
 			int16_t e = speed1_wish - speed1;
@@ -904,10 +912,14 @@ static void update_pid(void) {
 		}
 	}
 	if (motor2_mode == MOTOR_PID) {
+		if (speed2_wish != speed2_wish_old) {
+			esum2 = 0;
+			speed2_wish_old = speed2_wish;
+		}
+
 		if (speed2_wish == 0) {
 			motor2 = 0;
 			eold2 = 0;
-			esum2 = 0;
 			error_state &= ~(1<<5);
 		} else {
 			int16_t e = speed2_wish - speed2;
@@ -922,10 +934,14 @@ static void update_pid(void) {
 		}
 	}
 	if (motor3_mode == MOTOR_PID) {
+		if (speed3_wish != speed3_wish_old) {
+			esum3 = 0;
+			speed3_wish_old = speed3_wish;
+		}
+
 		if (speed3_wish == 0) {
 			motor3 = 0;
 			eold3 = 0;
-			esum3 = 0;
 			error_state &= ~(1<<6);
 		} else {
 			int16_t e = speed3_wish - speed3;
@@ -940,10 +956,14 @@ static void update_pid(void) {
 		}
 	}
 	if (motor4_mode == MOTOR_PID) {
+		if (speed4_wish != speed4_wish_old) {
+			esum4 = 0;
+			speed4_wish_old = speed4_wish;
+		}
+
 		if (speed4_wish == 0) {
 			motor4 = 0;
 			eold4 = 0;
-			esum4 = 0;
 			error_state &= ~(1<<7);
 		} else {
 			int16_t e = speed4_wish - speed4;
