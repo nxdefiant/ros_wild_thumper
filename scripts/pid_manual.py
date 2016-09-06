@@ -6,8 +6,8 @@ import struct
 from time import sleep
 from i2c import i2c_write_reg, i2c_read_reg
 
-KP=0.05
-KI=0.0
+KP=0.06
+KI=0.10
 KD=0.0
 PID_T=0.01
 STEP_PER_M_AVG=5766.1
@@ -19,6 +19,7 @@ esum1 = 0.0
 esum2 = 0.0
 esum3 = 0.0
 esum4 = 0.0
+PWM_BREAK = -32768
 speed1_wish=float(sys.argv[1])*STEP_PER_M_AVG
 speed2_wish=float(sys.argv[1])*STEP_PER_M_AVG
 speed3_wish=float(sys.argv[2])*STEP_PER_M_AVG
@@ -45,10 +46,12 @@ if __name__ == "__main__":
 			motor1 = KP*e + KI*PID_T*esum1 + KD/PID_T*(e - eold1)
 			eold1 = e
 
-			if (motor1 < 0 and speed1_wish > 0): motor1 = 0	
-			elif (motor1 > 0 and speed1_wish < 0): motor1 = 0	
+			if (motor1 < 0 and speed1_wish > 0): motor1 = PWM_BREAK	
+			elif (motor1 > 0 and speed1_wish < 0): motor1 = PWM_BREAK
 			elif (motor1 > 255): motor1 = 255
 			elif (motor1 < -255): motor1 = -255
+
+			print "Wish=", speed1_wish, "Speed=", speed1, "e=", e, "esum=", esum1, "pwm=", motor1, "error=", error
 
 		if speed2_wish == 0: 
 			motor2 = 0.0
@@ -60,8 +63,8 @@ if __name__ == "__main__":
 			motor2 = KP*e + KI*PID_T*esum2 + KD/PID_T*(e - eold2)
 			eold2 = e
 
-			if (motor2 < 0 and speed2_wish > 0): motor2 = 0	
-			elif (motor2 > 0 and speed2_wish < 0): motor2 = 0	
+			if (motor2 < 0 and speed2_wish > 0): motor2 = PWM_BREAK
+			elif (motor2 > 0 and speed2_wish < 0): motor2 = PWM_BREAK
 			elif (motor2 > 255): motor2 = 255
 			elif (motor2 < -255): motor2 = -255
 
@@ -75,8 +78,8 @@ if __name__ == "__main__":
 			motor3 = KP*e + KI*PID_T*esum3 + KD/PID_T*(e - eold3)
 			eold3 = e
 
-			if (motor3 < 0 and speed3_wish > 0): motor3 = 0	
-			elif (motor3 > 0 and speed3_wish < 0): motor3 = 0	
+			if (motor3 < 0 and speed3_wish > 0): motor3 = PWM_BREAK
+			elif (motor3 > 0 and speed3_wish < 0): motor3 = PWM_BREAK
 			elif (motor3 > 255): motor3 = 255
 			elif (motor3 < -255): motor3 = -255
 
@@ -90,12 +93,12 @@ if __name__ == "__main__":
 			motor4 = KP*e + KI*PID_T*esum4 + KD/PID_T*(e - eold4)
 			eold4 = e
 
-			if (motor4 < 0 and speed4_wish > 0): motor4 = 0	
-			elif (motor4 > 0 and speed4_wish < 0): motor4 = 0	
+			if (motor4 < 0 and speed4_wish > 0): motor4 = PWM_BREAK
+			elif (motor4 > 0 and speed4_wish < 0): motor4 = PWM_BREAK
 			elif (motor4 > 255): motor4 = 255
 			elif (motor4 < -255): motor4 = -255
 
-			print "Wish=", speed4_wish, "Speed=", speed4, "e=", e, "esum=", esum4, "pwm=", motor4, "error=", error
+			#print "Wish=", speed4_wish, "Speed=", speed4, "e=", e, "esum=", esum4, "pwm=", motor4, "error=", error
 
 		set_pwm(motor1, motor2, motor3, motor4)
 

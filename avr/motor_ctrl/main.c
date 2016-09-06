@@ -110,6 +110,7 @@
 #define STEP_PER_M_LEFT (STEP_PER_M_AVG)
 #define STEP_PER_M_RIGHT (STEP_PER_M_AVG)
 #define WHEEL_DIST 0.36923 // Real: 0.252
+#define PWM_BREAK INT16_MIN
 
 enum mode {
 	MOTOR_MANUAL,
@@ -698,6 +699,8 @@ static void update_motor(void) {
 		if (motor1 == 0) {
 			// stop
 			PORTC &= ~(1 << 3) & ~(1 << 2);
+		} else if (motor1 == PWM_BREAK) {
+			PORTC |= (1 << 3) | (1 << 2);
 		} else if ((!motor1_switch && motor1 > 0) || (motor1_switch && motor1 < 0)) {
 			// forward
 			uint8_t tmp=PORTC;
@@ -720,6 +723,8 @@ static void update_motor(void) {
 		if (motor2 == 0) {
 			// stop
 			PORTC &= ~(1 << 5) & ~(1 << 4);
+		} else if (motor2 == PWM_BREAK) {
+			PORTC |= (1 << 5) | (1 << 4);
 		} else if ((!motor2_switch && motor2 > 0) || (motor2_switch && motor2 < 0)) {
 			// forward
 			uint8_t tmp=PORTC;
@@ -742,6 +747,8 @@ static void update_motor(void) {
 		if (motor3 == 0) {
 			// stop
 			PORTC &= ~(1 << 7) & ~(1 << 6);
+		} else if (motor3 == PWM_BREAK) {
+			PORTC |= (1 << 7) | (1 << 6);
 		} else if ((!motor3_switch && motor3 > 0) || (motor3_switch && motor3 < 0)) {
 			// forward
 			uint8_t tmp=PORTC;
@@ -764,6 +771,8 @@ static void update_motor(void) {
 		if (motor4 == 0) {
 			// stop
 			PORTD &= ~(1 << 3) & ~(1 << 2);
+		} else if (motor4 == PWM_BREAK) {
+			PORTD |= (1 << 3) | (1 << 2);
 		} else if ((!motor4_switch && motor4 > 0) || (motor4_switch && motor4 < 0)) {
 			// forward
 			uint8_t tmp=PORTD;
@@ -863,26 +872,26 @@ static void update_pid(void) {
 	static int32_t esum4=0;
 
 	// protect motors from damage if stalling
-	if (labs(esum1) > 120000 && speed1 == 0) {
+	if (labs(esum1) > 140000 && speed1 == 0) {
 		motor1 = 0;
 		motor1_mode = MOTOR_MANUAL;
 		error_state |= (1<<4);
 		esum1 = 0;
 	}	
-	if (labs(esum2) > 120000 && speed2 == 0) {
+	if (labs(esum2) > 140000 && speed2 == 0) {
 		motor2 = 0;
 		motor2_mode = MOTOR_MANUAL;
 		error_state |= (1<<5);
 		esum2 = 0;
 	}	
-	if (labs(esum3) > 120000 && speed3 == 0) {
+	if (labs(esum3) > 140000 && speed3 == 0) {
 		motor3 = 0;
 		motor3_mode = MOTOR_MANUAL;
 		error_state |= (1<<6);
 		esum3 = 0;
 	}	
 	// protect motors from damage if stalling
-	if (labs(esum4) > 120000 && speed4 == 0) {
+	if (labs(esum4) > 140000 && speed4 == 0) {
 		motor4 = 0;
 		motor4_mode = MOTOR_MANUAL;
 		error_state |= (1<<7);
@@ -891,7 +900,7 @@ static void update_pid(void) {
 
 	if (motor1_mode == MOTOR_PID) {
 		if (speed1_wish != speed1_wish_old) {
-			esum1 = 0;
+			if (abs(speed1_wish - speed1_wish_old) > 500) esum1 = 0;
 			speed1_wish_old = speed1_wish;
 		}
 
@@ -905,15 +914,15 @@ static void update_pid(void) {
 			motor1 = KP*e + KI*PID_T*esum1 + KD/PID_T*(e - eold1);
 			eold1 = e;
 
-			if (motor1 > 0 && speed1_wish < 0) motor1=0;
-			else if (motor1 < 0 && speed1_wish > 0) motor1=0;
+			if (motor1 > 0 && speed1_wish < 0) motor1=PWM_BREAK;
+			else if (motor1 < 0 && speed1_wish > 0) motor1=PWM_BREAK;
 			else if (motor1 > 255) motor1 = 255;
 			else if (motor1 < -255) motor1 = -255;
 		}
 	}
 	if (motor2_mode == MOTOR_PID) {
 		if (speed2_wish != speed2_wish_old) {
-			esum2 = 0;
+			if (abs(speed2_wish - speed2_wish_old) > 500) esum2 = 0;
 			speed2_wish_old = speed2_wish;
 		}
 
@@ -927,15 +936,15 @@ static void update_pid(void) {
 			motor2 = KP*e + KI*PID_T*esum2 + KD/PID_T*(e - eold2);
 			eold2 = e;
 
-			if (motor2 > 0 && speed2_wish < 0) motor2=0;
-			else if (motor2 < 0 && speed2_wish > 0) motor2=0;
+			if (motor2 > 0 && speed2_wish < 0) motor2=PWM_BREAK;
+			else if (motor2 < 0 && speed2_wish > 0) motor2=PWM_BREAK;
 			else if (motor2 > 255) motor2 = 255;
 			else if (motor2 < -255) motor2 = -255;
 		}
 	}
 	if (motor3_mode == MOTOR_PID) {
 		if (speed3_wish != speed3_wish_old) {
-			esum3 = 0;
+			if (abs(speed3_wish - speed3_wish_old) > 500) esum3 = 0;
 			speed3_wish_old = speed3_wish;
 		}
 
@@ -949,15 +958,15 @@ static void update_pid(void) {
 			motor3 = KP*e + KI*PID_T*esum3 + KD/PID_T*(e - eold3);
 			eold3 = e;
 
-			if (motor3 > 0 && speed3_wish < 0) motor3=0;
-			else if (motor3 < 0 && speed3_wish > 0) motor3=0;
+			if (motor3 > 0 && speed3_wish < 0) motor3=PWM_BREAK;
+			else if (motor3 < 0 && speed3_wish > 0) motor3=PWM_BREAK;
 			else if (motor3 > 255) motor3 = 255;
 			else if (motor3 < -255) motor3 = -255;
 		}
 	}
 	if (motor4_mode == MOTOR_PID) {
 		if (speed4_wish != speed4_wish_old) {
-			esum4 = 0;
+			if (abs(speed4_wish - speed4_wish_old) > 500) esum4 = 0;
 			speed4_wish_old = speed4_wish;
 		}
 
@@ -971,8 +980,8 @@ static void update_pid(void) {
 			motor4 = KP*e + KI*PID_T*esum4 + KD/PID_T*(e - eold4);
 			eold4 = e;
 
-			if (motor4 > 0 && speed4_wish < 0) motor4=0;
-			else if (motor4 < 0 && speed4_wish > 0) motor4=0;
+			if (motor4 > 0 && speed4_wish < 0) motor4=PWM_BREAK;
+			else if (motor4 < 0 && speed4_wish > 0) motor4=PWM_BREAK;
 			else if (motor4 > 255) motor4 = 255;
 			else if (motor4 < -255) motor4 = -255;
 		}

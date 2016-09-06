@@ -79,6 +79,7 @@ class MoveBase:
 		rospy.loginfo("Reset Status: 0x%x" % reset_val)
 		i = 0
 		while not rospy.is_shutdown():
+			rospy.logdebug("Loop alive")
 			#print struct.unpack(">B", i2c_read_reg(0x50, 0xA2, 1))[0] # count test
 			self.get_motor_err()
 			self.get_odom()
@@ -230,7 +231,9 @@ class MoveBase:
 		i2c_write_reg(0x50, 0x50, struct.pack(">ff", trans, rot))
 
 	def cmdVelReceived(self, msg):
+		rospy.logdebug("Set new cmd_vel:", msg.linear.x, msg.angular.z)
 		self.cmd_vel = (msg.linear.x, msg.angular.z) # commit speed on next update cycle
+		rospy.logdebug("Set new cmd_vel done")
 
 	# http://rn-wissen.de/wiki/index.php/Sensorarten#Sharp_GP2D12
 	def get_dist_ir(self, num):
