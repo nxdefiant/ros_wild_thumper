@@ -1,20 +1,21 @@
 #must match incoming static map
 global_frame: map
-robot_base_frame: base_link
-resolution: 0.05
+robot_base_frame: base_footprint
+update_frequency: 5.0
+resolution: 0.01
 
-track_unknown_space: true
 rolling_window: false
+track_unknown_space: true
 
 plugins: 
-- {name: static,           type: "costmap_2d::StaticLayer"}            
+- {name: static_layer, type: 'costmap_2d::StaticLayer'}
 - {name: explore_boundary, type: "frontier_exploration::BoundedExploreLayer"}
 #Can disable sensor layer if gmapping is fast enough to update scans
-- {name: sensor,           type: "costmap_2d::ObstacleLayer"}
-- {name: inflation,        type: "costmap_2d::InflationLayer"}
+- {name: obstacle_layer, type: 'costmap_2d::ObstacleLayer'}
+- {name: inflation_layer, type: 'costmap_2d::InflationLayer'}
 
 explore_boundary:
-  resize_to_boundary: false
+  resize_to_boundary: true
   frontier_travel_point: middle
   #set to false for gmapping, true if re-exploring a known area
-  explore_clear_space: false
+  explore_clear_space: true

@@ -3,7 +3,7 @@
 	<arg name="slam_gmapping" default="false" />
 	<arg name="map_file" default="$(find wild_thumper)/data/map.yaml" />
 	<arg name="nomap" default="false" />
-	<arg name="base_local_planner" default="dwa_local_planner/DWAPlannerROS"/> <!-- base_local_planner/TrajectoryPlannerROS || dwa_local_planner/DWAPlannerROS -->
+	<arg name="base_local_planner" default="base_local_planner/TrajectoryPlannerROS"/> <!-- base_local_planner/TrajectoryPlannerROS || dwa_local_planner/DWAPlannerROS -->
 
 	<!-- Run AMCL -->
 	<group unless="$(arg nomap)">
@@ -29,6 +29,7 @@
 
 	<node pkg="move_base" type="move_base" respawn="false" name="move_base" output="screen">
 		<param name="base_local_planner" value="$(arg base_local_planner)"/>
+		<param name="controller_frequency" value="10.0" />
 		<rosparam file="$(find wild_thumper)/config/costmap_common_params.yaml" command="load" ns="global_costmap" />
 		<rosparam file="$(find wild_thumper)/config/costmap_common_params.yaml" command="load" ns="local_costmap" />
 		<rosparam file="$(find wild_thumper)/config/global_costmap_params.yaml" command="load" unless="$(arg nomap)" />
