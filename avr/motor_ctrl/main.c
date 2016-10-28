@@ -105,11 +105,13 @@
 #define KI 0.10
 #define KD 0.0
 #define PID_T 0.01
-// wheel diameter=12cm, encoder=48cpr, gear ratio=1:47, real wheel diameter: 0.12454m
-#define STEP_PER_M_AVG 5766.1
-#define STEP_PER_M_LEFT (STEP_PER_M_AVG)
-#define STEP_PER_M_RIGHT (STEP_PER_M_AVG)
-#define WHEEL_DIST 0.36923 // Real: 0.252
+// wheel diameter=12cm, encoder=48cpr, gear ratio=1:47
+// STEP_PER_M = 48*47/(d*pi)
+// Left real diameter: 0.12808
+#define STEP_PER_M_LEFT 5606.7
+// Right real diameter: 0.121
+#define STEP_PER_M_RIGHT 5934.8
+#define WHEEL_DIST 0.39912 // Measured: 0.252
 #define PWM_BREAK INT16_MIN
 
 enum mode {
