@@ -101,16 +101,16 @@
 #define TWI_RESET	TWCR &= ~((1 << TWSTO) | (1 << TWEN)); TWI_ACK
 #define TWI_NAK		TWCR = (1<<TWINT) | (1<<TWEN) | (1<<TWIE)
 
-#define KP 0.06
-#define KI 0.10
+#define KP 0.061
+#define KI 0.12
 #define KD 0.0
 #define PID_T 0.01
 // wheel diameter=12cm, encoder=48cpr, gear ratio=1:47
 // STEP_PER_M = 48*47/(d*pi)
-// Left real diameter: 0.12808
-#define STEP_PER_M_LEFT 5606.7
-// Right real diameter: 0.121
-#define STEP_PER_M_RIGHT 5934.8
+// Left real diameter: 0.12808, Right real diameter: 0.121
+#define STEP_PER_M 5770.8
+#define STEP_PER_M_LEFT (STEP_PER_M)
+#define STEP_PER_M_RIGHT (STEP_PER_M)
 #define WHEEL_DIST 0.39912 // Measured: 0.252
 #define PWM_BREAK INT16_MIN
 

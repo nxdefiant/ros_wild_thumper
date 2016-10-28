@@ -15,7 +15,7 @@
 		<rosparam command="load" file="$(find wild_thumper)/config/analyzers.yaml"/>
 	</node>
 
-	<node pkg="wild_thumper" type="wt_node.py" name="wild_thumper" output="screen" respawn="false" required="true">
+	<node pkg="wild_thumper" type="wt_node.py" name="wild_thumper" output="screen" respawn="true" required="false">
 		<param name="enable_odom_tf" value="true" unless="$(arg use_imu)"/>
 		<param name="enable_odom_tf" value="false" if="$(arg use_imu)"/>
 	</node>
