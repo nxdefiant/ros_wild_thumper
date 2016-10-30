@@ -62,7 +62,7 @@ class UMBMark:
 		rospy.loginfo("Moving to (%.2f, %2f), %d°.." % (x, y, angle*180/pi))
 
 		goal = MoveBaseGoal()
-		goal.target_pose.header.frame_id = "base_footprint"
+		goal.target_pose.header.frame_id = "odom"
 		goal.target_pose.header.stamp = rospy.Time.now()
 		goal.target_pose.pose.position.x = x
 		goal.target_pose.pose.position.y = y
@@ -84,9 +84,29 @@ class UMBMark:
 		while self.odom_pose is None:
 			sleep(0.1)
 		init_pose = self.odom_pose
-		for i in range(4):
-			self.next_pos(size, 0, 0)
-			self.next_pos(0, 0, direction*90*pi/180)
+
+		x = size
+		y = 0
+		angle = 0
+		self.next_pos(x, y, angle)
+		angle = direction*90*pi/180
+		self.next_pos(x, y, angle)
+
+		y = size*direction
+		self.next_pos(x, y, angle)
+		angle = direction*180*pi/180
+		self.next_pos(x, y, direction*-180*pi/180)
+
+		x = 0
+		self.next_pos(x, y, angle)
+		angle = direction*270*pi/180
+		self.next_pos(x, y, angle)
+
+		y = 0
+		self.next_pos(x, y, angle)
+		angle = 0
+		self.next_pos(x, y, angle)
+
 		final_pose = map(operator.sub, self.odom_pose, init_pose)
 		print "Odom Pose: x=%.3f, y=%.3f, angle=%.3f°" % (final_pose[0], final_pose[1], final_pose[2]*180/pi)
 
