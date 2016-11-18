@@ -14,6 +14,8 @@ from nav_msgs.msg import Odometry
 from diagnostic_msgs.msg import DiagnosticArray, DiagnosticStatus, KeyValue
 from sensor_msgs.msg import Imu, Range
 from wild_thumper.msg import LedStripe
+from dynamic_reconfigure.server import Server
+from wild_thumper.cfg import WildThumperConfig
 
 WHEEL_DIST = 0.248
 
@@ -55,6 +57,7 @@ class MoveBase:
 			self.tf_broadcaster = tf.broadcaster.TransformBroadcaster()
 		else:
 			self.tf_broadcaster = None
+		self.dyn_conf = Server(WildThumperConfig, self.execute_dyn_reconf)
 		self.pub_odom = rospy.Publisher("odom", Odometry, queue_size=16)
 		self.pub_diag = rospy.Publisher("diagnostics", DiagnosticArray, queue_size=16)
 		self.pub_range_fwd = rospy.Publisher("range_forward", Range, queue_size=16)
@@ -95,6 +98,11 @@ class MoveBase:
 				self.set_speed(self.cmd_vel[0], self.cmd_vel[1])
 				self.cmd_vel = None
 			rate.sleep()
+
+	def execute_dyn_reconf(self, config, level):
+		self.bClipRangeSensor = config["range_sensor_clip"]
+		self.range_sensor_max = config["range_sensor_max"]
+		return config
 
 	def set_motor_handicap(self, front, aft): # percent
 		if front > 100: front = 100
@@ -261,6 +269,8 @@ class MoveBase:
 		return struct.unpack(">H", i2c_read_reg(0x52, num, 2))[0]/1000.0
 
 	def send_range(self, pub, frame_id, typ, dist, min_range, max_range, fov_deg):
+		if self.bClipRangeSensor and dist > max_range:
+			dist = max_range
 		msg = Range()
 		msg.header.stamp = rospy.Time.now()
 		msg.header.frame_id = frame_id
@@ -286,13 +296,13 @@ class MoveBase:
 	def get_dist_forward(self):
 		if self.pub_range_fwd.get_num_connections() > 0:
 			dist = self.read_dist_srf(0x15)
-			self.send_range(self.pub_range_fwd, "sonar_forward", Range.ULTRASOUND, dist, 0.04, 6, 40)
+			self.send_range(self.pub_range_fwd, "sonar_forward", Range.ULTRASOUND, dist, 0.04, self.range_sensor_max, 30)
 			self.start_dist_srf(0x5) # get next value
 
 	def get_dist_backward(self):
 		if self.pub_range_bwd.get_num_connections() > 0:
 			dist = self.read_dist_srf(0x17)
-			self.send_range(self.pub_range_bwd, "sonar_backward", Range.ULTRASOUND, dist, 0.04, 6, 40)
+			self.send_range(self.pub_range_bwd, "sonar_backward", Range.ULTRASOUND, dist, 0.04, self.range_sensor_max, 30)
 			self.start_dist_srf(0x7) # get next value
 	
 	def led_stripe_received(self, msg):

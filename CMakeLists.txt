@@ -68,6 +68,7 @@ generate_messages(
 
 generate_dynamic_reconfigure_options(
   config/path_following.cfg
+  config/wt_node.cfg
 )
 
 ###################################
