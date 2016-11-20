@@ -7,4 +7,9 @@ obstacle_layer:
   laser_scan_sensor: {sensor_frame: camera_depth_frame, data_type: LaserScan, topic: scan, marking: true, clearing: true}
 
 inflation_layer:
-  inflation_radius: 0.5
+  inflation_radius: 0.25
+
+range_layer:
+  topics: ["/range_forward", "/range_backward", "/range_left", "/range_right"]
+  no_readings_timeout: 1.0
+  clear_on_max_reading: true

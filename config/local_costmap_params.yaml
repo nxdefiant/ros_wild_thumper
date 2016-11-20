@@ -10,10 +10,5 @@ local_costmap:
   resolution: 0.05
   plugins:
   - {name: obstacle_layer, type: 'costmap_2d::ObstacleLayer'}
-  #- {name: range_layer,   type: "range_sensor_layer::RangeSensorLayer"}
+  - {name: range_layer,   type: "range_sensor_layer::RangeSensorLayer"}
   - {name: inflation_layer, type: 'costmap_2d::InflationLayer'}
-
-  range_layer:
-    topics: ["/range_forward", "/range_backward", "/range_left", "/range_right"]
-    no_readings_timeout: 1.0
-    clear_on_max_reading: true

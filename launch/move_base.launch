@@ -8,13 +8,13 @@
 	<!-- Run AMCL -->
 	<group unless="$(arg nomap)">
 		<!-- Run the map server -->
-		<node name="map_server" pkg="map_server" type="map_server" args="$(arg map_file)" unless="$(arg slam_gmapping)" />
+		<node name="map_server" pkg="map_server" type="map_server" args="$(arg map_file)" output="screen" unless="$(arg slam_gmapping)" />
 
 		<include file="$(find amcl)/examples/amcl_diff.launch" unless="$(arg slam_gmapping)" />
 		<param name="amcl/base_frame_id" value="base_footprint" />
 	</group>
 
-	<node pkg="gmapping" type="slam_gmapping" name="slap_gmapping" output="screen" if="$(arg slam_gmapping)">
+	<node pkg="gmapping" type="slam_gmapping" name="slap_gmapping" if="$(arg slam_gmapping)">
 		<param name="scan" value="scan" />
 		<param name="delta" value="0.01" />
 		<param name="map_update_interval" value="30" />
