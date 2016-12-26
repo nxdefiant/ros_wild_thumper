@@ -21,11 +21,13 @@
 			</geometry>
 		</collision>
 		<visual>
+			<origin xyz="-0.00275 0 0" rpy="0 0 0"/>
 			<geometry>
 				<mesh filename="package://wild_thumper/meshes/wild_thumper_4wd.stl" />
 			</geometry>
 		</visual>
 		<inertial>
+			<origin xyz="-0.00275 0 -0.02" rpy="0 0 0"/>
 			<mass value="2.5"/>
 			<inertia ixx="1.0" ixy="0.0" ixz="0.0" iyy="1.0" iyz="0.0" izz="1.0"/>
 		</inertial>
@@ -161,9 +163,18 @@
 			<inertial>
 				<origin xyz="0 0 0" rpy="0 0 0"/>
 				<mass value="0.1"/>
-				<inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01"/>
+				<inertia ixx="0.005" ixy="0" ixz="0" iyy="0.005" iyz="0" izz="0.005"/>
 			</inertial>
 		</link>
+
+		<gazebo reference="${pos}_${side}_wheel">
+			<mu1 value="1.0"/>
+			<mu2 value="1.0"/>
+			<kp value="1000000.0" />
+			<kd value="1.0" />
+			<fdir1 value="1 0 0"/>
+		</gazebo>
+
 		<joint name="${pos}_${side}_wheel_joint" type="continuous">
 			<parent link="base_link"/>
 			<child link="${pos}_${side}_wheel"/>
@@ -177,16 +188,15 @@
 				<hardwareInterface>VelocityJointInterface</hardwareInterface>
 			</joint>
 			<actuator name="{pos}_${side}_wheel_motor">
-				<hardwareInterface>VelocityJointInterface</hardwareInterface>
 				<mechanicalReduction>1</mechanicalReduction>
 			</actuator>
 		</transmission>
 	</xacro:macro>
 
-	<xacro:wheel pos="rear" side="left"  xyz="-0.06398 0.114 -0.022446" rpy="0 0 0" />
-	<xacro:wheel pos="rear" side="right" xyz="-0.07397 -0.114 -0.022446" rpy="0 0 0" />
-	<xacro:wheel pos="front" side="left"  xyz="0.07602 0.114 -0.022446" rpy="0 0 0" />
-	<xacro:wheel pos="front" side="right" xyz="0.07397 -0.114 -0.022446" rpy="0 0 0" />
+	<xacro:wheel pos="rear" side="left"   xyz="-0.07525  0.12 -0.025" rpy="${-5*PI/180} 0 0" />
+	<xacro:wheel pos="rear" side="right"  xyz="-0.07525 -0.12 -0.025" rpy="${5*PI/180} 0 0" />
+	<xacro:wheel pos="front" side="left"  xyz=" 0.07525  0.12 -0.025" rpy="${-5*PI/180} 0 0" />
+	<xacro:wheel pos="front" side="right" xyz=" 0.07525 -0.12 -0.025" rpy="${5*PI/180} 0 0" />
 
 	<gazebo>
 		<plugin name="gazebo_ros_control" filename="libgazebo_ros_control.so">
@@ -203,6 +213,7 @@
 			<frameName>base_imu_link</frameName>
 			<xyzOffsets>0 0 0</xyzOffsets>
 			<rpyOffset>0 0 0</rpyOffset>
+			<serviceName>/default_imu</serviceName>
 		</plugin>
 	</gazebo>
 
@@ -246,8 +257,8 @@
 		</gazebo>
 	</xacro:macro>
 
-	<xacro:range_sensor name="sonar_forward" ros_topic="range_forward" update_rate="10" minRange="0.04" maxRange="6" fov="${30*PI/180}" radiation="ultrasound" />
-	<xacro:range_sensor name="sonar_backward" ros_topic="range_backward" update_rate="10" minRange="0.04" maxRange="6" fov="${30*PI/180}" radiation="ultrasound" />
+	<xacro:range_sensor name="sonar_forward" ros_topic="range_forward" update_rate="10" minRange="0.04" maxRange="0.5" fov="${20*PI/180}" radiation="ultrasound" />
+	<xacro:range_sensor name="sonar_backward" ros_topic="range_backward" update_rate="10" minRange="0.04" maxRange="0.5" fov="${20*PI/180}" radiation="ultrasound" />
 	<xacro:range_sensor name="ir_left" ros_topic="range_left" update_rate="10" minRange="0.04" maxRange="0.3" fov="${5*PI/180}" radiation="infrared" />
 	<xacro:range_sensor name="ir_right" ros_topic="range_right" update_rate="10" minRange="0.04" maxRange="0.3" fov="${5*PI/180}" radiation="infrared" />
 </robot>

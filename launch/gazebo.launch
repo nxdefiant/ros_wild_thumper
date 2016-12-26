@@ -2,6 +2,8 @@
 <launch>
 	<arg name="use_imu" default="true"/>
 
+	<node pkg="nodelet" type="nodelet" name="nodelet_manager" args="manager"/>
+
 	<!-- Load joint controller configurations from YAML file to parameter server -->
 	<rosparam file="$(find wild_thumper)/config/control.yaml" command="load" />
 	<rosparam param="/diff_drive_controller/enable_odom_tf" unless="$(arg use_imu)">true</rosparam>
@@ -21,7 +23,7 @@
 	<!-- load the controllers -->
 	<node name="controller_spawner" pkg="controller_manager" type="spawner" output="screen" ns="/" args="joint_state_controller diff_drive_controller"/>
 
-	<node name="relay_cmd_vel" pkg="topic_tools" type="relay" output="screen" args="/cmd_vel /diff_drive_controller/cmd_vel" />
+	<node name="relay_cmd_vel" pkg="topic_tools" type="relay" output="screen" args="/cmd_vel_out /diff_drive_controller/cmd_vel" />
 	<node name="relay_odom" pkg="topic_tools" type="relay" output="screen" args="/diff_drive_controller/odom /odom" />
 
 	<node pkg="depthimage_to_laserscan" type="depthimage_to_laserscan" name="depthimage_to_laserscan" output="screen">
@@ -37,4 +39,9 @@
 		<param name="debug" value="true"/>
 		<param name="sensor_timeout" value="2.0"/>
 	</node>
+
+	<include file="$(find yocs_cmd_vel_mux)/launch/cmd_vel_mux.launch">
+		<arg name="config_file" value="$(find wild_thumper)/config/cmd_vel_mux.yaml" />
+		<arg name="nodelet_manager_name" value="nodelet_manager" />
+	</include>
 </launch>

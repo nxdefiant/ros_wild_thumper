@@ -8,9 +8,9 @@
 			<uri>model://sun</uri>
 		</include>
 		<include>
-			<uri>model://regerstr</uri>
-			<name>regerstr</name>
-			<pose>-5.0 5.0 0 1.5708 0 0</pose>
+			<uri>model://gas_station</uri>
+			<name>gas_station</name>
+			<pose>-2.0 7.0 0 0 0 0</pose>
 		</include>
 		<physics type='ode'>
 			<max_step_size>0.02</max_step_size>
