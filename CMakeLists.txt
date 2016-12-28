@@ -44,6 +44,7 @@ add_message_files(
   FILES
   LedStripe.msg
   Led.msg
+  Sensor.msg
 )
 
 ## Generate services in the 'srv' folder
