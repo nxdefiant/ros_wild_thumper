@@ -66,8 +66,6 @@ class SensorBoard:
 				if (datetime.now() - t_last_check).seconds > 900:
 					ventilate = check_ventilate(temp, humidity)
 					t_last_check = datetime.now()
-				if (ventilate > 1.10):
-					print "Lüften!"
 				
 				msg = Sensor()
 				msg.header.stamp = rospy.Time.now()
@@ -76,7 +74,7 @@ class SensorBoard:
 				msg.humidity = humidity
 				msg.pressure = pressure
 				msg.co = co
-				msg.ventilate = ventilate
+				msg.ventilate = True if ventilate > 1.10 else False
 
 				self.pub.publish(msg)
 
