@@ -8,13 +8,20 @@ TrajectoryPlannerROS:
 
   acc_lim_x: 10.07
   acc_lim_y: 0.0
-  acc_lim_theta: 12.00
+  acc_lim_theta: 6.00
 
   holonomic_robot: false
+  # gdist_scale and pdist_scale parameters should assume meters
   meter_scoring: true
 
   xy_goal_tolerance: 0.20
   yaw_goal_tolerance: 0.3
+
+  # The weighting for how much the controller should attempt to avoid obstacles, default: 0.01
+  occdist_scale: 0.02
+
+  # Whether to score based on the robot's heading to the path or its distance from the path, default: false
+  heading_scoring: true
 
 DWAPlannerROS:
   acc_lim_x: 10.07

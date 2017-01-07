@@ -14,23 +14,7 @@
 		<param name="amcl/base_frame_id" value="base_footprint" />
 	</group>
 
-	<node pkg="gmapping" type="slam_gmapping" name="slap_gmapping" if="$(arg slam_gmapping)">
-		<param name="scan" value="scan" />
-		<param name="delta" value="0.01" />
-		<param name="map_update_interval" value="5.0" />
-		<param name="linearUpdate" value="0.5" />
-		<param name="angularUpdate" value="0.25" />
-		<param name="xmin" value="-5.0"/>
-		<param name="ymin" value="-5.0"/>
-		<param name="xmax" value="5.0"/>
-		<param name="ymax" value="5.0"/>
-		<param name="odom_frame" value="odom"/>
-		<param name="maxUrange" value="6.0"/>
-		<param name="maxRange" value="8.0"/>
-		<param name="minimumScore" value="200"/>
-		<param name="linearUpdate" value="0.5"/>
-		<param name="particles" value="80"/>
-	</node>
+	<include file="$(find wild_thumper)/launch/gmapping.launch" if="$(arg slam_gmapping)" />
 
 	<node pkg="move_base" type="move_base" respawn="false" name="move_base" output="screen">
 		<param name="base_local_planner" value="$(arg base_local_planner)"/>

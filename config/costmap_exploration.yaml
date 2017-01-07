@@ -22,13 +22,8 @@ static_layer:
   # map_topic: move_base/global_costmap/costmap
   subscribe_to_updates: true
 
-range_layer:
-  topics: ["/range_forward", "/range_backward"]
-  no_readings_timeout: 1.0
-  clear_on_max_reading: true
-
 explore_boundary:
   resize_to_boundary: false
   frontier_travel_point: middle
   # set to false for gmapping, true if re-exploring a known area
-  explore_clear_space: true
+  explore_clear_space: false
