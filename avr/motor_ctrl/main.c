@@ -97,10 +97,6 @@
  */
 
 
-#define TWI_ACK		TWCR = (1<<TWEA) | (1<<TWINT) | (1<<TWEN) | (1<<TWIE)
-#define TWI_RESET	TWCR &= ~((1 << TWSTO) | (1 << TWEN)); TWI_ACK
-#define TWI_NAK		TWCR = (1<<TWINT) | (1<<TWEN) | (1<<TWIE)
-
 #define KP 0.061
 #define KI 0.12
 #define KD 0.0
@@ -113,6 +109,19 @@
 #define STEP_PER_M_RIGHT (STEP_PER_M)
 #define WHEEL_DIST 0.39912 // Measured: 0.252
 #define PWM_BREAK INT16_MIN
+
+#define TWI_ACK   TWCR = (1<<TWEA) | (1<<TWINT) | (1<<TWEN) | (1<<TWIE)
+#define TWI_RESET TWCR &= ~((1 << TWSTO) | (1 << TWEN)); TWI_ACK
+#define TWI_NAK   TWCR = (1<<TWINT) | (1<<TWEN) | (1<<TWIE)
+#define ENABLE_PWM_MOTOR1  TCCR1A |=  (1 << COM1A1)
+#define ENABLE_PWM_MOTOR2  TCCR1A |=  (1 << COM1B1)
+#define ENABLE_PWM_MOTOR3  TCCR2  |=  (1 << COM21);
+#define ENABLE_PWM_MOTOR4  TCCR0  |=  (1 << COM01);
+#define DISABLE_PWM_MOTOR1 TCCR1A &= ~(1 << COM1A1)
+#define DISABLE_PWM_MOTOR2 TCCR1A &= ~(1 << COM1B1)
+#define DISABLE_PWM_MOTOR3 TCCR2  &= ~(1 << COM21);
+#define DISABLE_PWM_MOTOR4 TCCR0  &= ~(1 << COM01);
+
 
 enum mode {
 	MOTOR_MANUAL,
@@ -701,20 +710,24 @@ static void update_motor(void) {
 		if (motor1 == 0) {
 			// stop
 			PORTC &= ~(1 << 3) & ~(1 << 2);
+			DISABLE_PWM_MOTOR1;
 		} else if (motor1 == PWM_BREAK) {
 			PORTC |= (1 << 3) | (1 << 2);
+			ENABLE_PWM_MOTOR1;
 		} else if ((!motor1_switch && motor1 > 0) || (motor1_switch && motor1 < 0)) {
 			// forward
 			uint8_t tmp=PORTC;
 			tmp &= ~(1 << 3);
 			tmp |=  (1 << 2);
 			PORTC = tmp;
+			ENABLE_PWM_MOTOR1;
 		} else { // motor1 < 0
 			// backward
 			uint8_t tmp=PORTC;
 			tmp &= ~(1 << 2);
 			tmp |=  (1 << 3);
 			PORTC = tmp;
+			ENABLE_PWM_MOTOR1;
 		}
 
 		m1_old = motor1;
@@ -725,20 +738,24 @@ static void update_motor(void) {
 		if (motor2 == 0) {
 			// stop
 			PORTC &= ~(1 << 5) & ~(1 << 4);
+			DISABLE_PWM_MOTOR2;
 		} else if (motor2 == PWM_BREAK) {
 			PORTC |= (1 << 5) | (1 << 4);
+			ENABLE_PWM_MOTOR2;
 		} else if ((!motor2_switch && motor2 > 0) || (motor2_switch && motor2 < 0)) {
 			// forward
 			uint8_t tmp=PORTC;
 			tmp &= ~(1 << 5);
 			tmp |=  (1 << 4);
 			PORTC = tmp;
+			ENABLE_PWM_MOTOR2;
 		} else { // motor2 < 0
 			// backward
 			uint8_t tmp=PORTC;
 			tmp &= ~(1 << 4);
 			tmp |=  (1 << 5);
 			PORTC = tmp;
+			ENABLE_PWM_MOTOR2;
 		}
 
 		m2_old = motor2;
@@ -749,20 +766,24 @@ static void update_motor(void) {
 		if (motor3 == 0) {
 			// stop
 			PORTC &= ~(1 << 7) & ~(1 << 6);
+			DISABLE_PWM_MOTOR3;
 		} else if (motor3 == PWM_BREAK) {
 			PORTC |= (1 << 7) | (1 << 6);
+			ENABLE_PWM_MOTOR3;
 		} else if ((!motor3_switch && motor3 > 0) || (motor3_switch && motor3 < 0)) {
 			// forward
 			uint8_t tmp=PORTC;
 			tmp &= ~(1 << 7);
 			tmp |=  (1 << 6);
 			PORTC = tmp;
+			ENABLE_PWM_MOTOR3;
 		} else { // motor3 < 0
 			// backward
 			uint8_t tmp=PORTC;
 			tmp &= ~(1 << 6);
 			tmp |=  (1 << 7);
 			PORTC = tmp;
+			ENABLE_PWM_MOTOR3;
 		}
 
 		m3_old = motor3;
@@ -773,20 +794,24 @@ static void update_motor(void) {
 		if (motor4 == 0) {
 			// stop
 			PORTD &= ~(1 << 3) & ~(1 << 2);
+			DISABLE_PWM_MOTOR4;
 		} else if (motor4 == PWM_BREAK) {
 			PORTD |= (1 << 3) | (1 << 2);
+			ENABLE_PWM_MOTOR4;
 		} else if ((!motor4_switch && motor4 > 0) || (motor4_switch && motor4 < 0)) {
 			// forward
 			uint8_t tmp=PORTD;
 			tmp &= ~(1 << 3);
 			tmp |=  (1 << 2);
 			PORTD = tmp;
+			ENABLE_PWM_MOTOR4;
 		} else { // motor4 < 0
 			// backward
 			uint8_t tmp=PORTD;
 			tmp &= ~(1 << 2);
 			tmp |=  (1 << 3);
 			PORTD = tmp;
+			ENABLE_PWM_MOTOR4;
 		}
 
 		m4_old = motor4;
@@ -892,7 +917,6 @@ static void update_pid(void) {
 		error_state |= (1<<6);
 		esum3 = 0;
 	}	
-	// protect motors from damage if stalling
 	if (labs(esum4) > 140000 && speed4 == 0) {
 		motor4 = 0;
 		motor4_mode = MOTOR_MANUAL;
@@ -1019,9 +1043,12 @@ int main(void) {
 	TWI_RESET;
 
 	// Motor 1 & 2
+	// Also used for PWM frequency TIMER1_FREQ
 	// Timer 1: Fast PWM non-inverting mode, Top=255 => 15.625kHz
 	// Prescaler=1
-	TCCR1A = (1 << COM1A1) | (1 << COM1B1) | (1 << WGM10);
+	//TCCR1A = (1 << COM1A1) | (1 << COM1B1) | (1 << WGM10);
+	// Avoid narrow spike on extreme pwm value 0 by not setting COM1*1
+	TCCR1A = (1 << WGM10);
 	TCCR1B = (1 << WGM12) | (1 << CS10);
 	OCR1A = 0;
 	OCR1B = 0;
@@ -1029,13 +1056,17 @@ int main(void) {
 	// Motor 3
 	// Timer 2: Fast PWM non-inverting mode, Top=255
 	// Prescaler=1
-	TCCR2 = (1 << WGM21) | (1 << WGM20) | (1 << COM21) | (1 << CS20);
+	//TCCR2 = (1 << WGM21) | (1 << WGM20) | (1 << COM21) | (1 << CS20);
+	// Avoid narrow spike on extreme pwm value 0 by not setting COM21
+	TCCR2 = (1 << WGM21) | (1 << WGM20) | (1 << CS20);
 	OCR2 = 0;
 
 	// Motor 4
 	// Timer 0: Fast PWM non-inverting mode, Top=255
 	// Prescaler=1
-	TCCR0 = (1 << WGM01) | (1 << WGM00) | (1 << COM01) | (1 << CS00);
+	//TCCR0 = (1 << WGM01) | (1 << WGM00) | (1 << COM01) | (1 << CS00);
+	// Avoid narrow spike on extreme pwm value 0 by not setting COM01
+	TCCR0 = (1 << WGM01) | (1 << WGM00) | (1 << CS00);
 	OCR0 = 0;
 
 	printf("\r\nStart\r\n");
@@ -1094,7 +1125,7 @@ int main(void) {
 			motor4_mode = MOTOR_PID;
 		}
 
-		if (run_update >= 156) { // ~100Hz
+		if (run_update >= 156) { // TIMER1_FREQ/156 = ~100Hz
 			run_update=0;
 
 			update_pos();
