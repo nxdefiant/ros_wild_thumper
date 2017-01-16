@@ -1043,8 +1043,8 @@ int main(void) {
 	TWI_RESET;
 
 	// Motor 1 & 2
-	// Also used for PWM frequency TIMER1_FREQ
-	// Timer 1: Fast PWM non-inverting mode, Top=255 => 15.625kHz
+	// Also used for PWM frequency TIMER1_FREQ (F_CPU/256)
+	// Timer 1: Fast PWM non-inverting mode, Top=255 => 19.531kHz
 	// Prescaler=1
 	//TCCR1A = (1 << COM1A1) | (1 << COM1B1) | (1 << WGM10);
 	// Avoid narrow spike on extreme pwm value 0 by not setting COM1*1
@@ -1125,7 +1125,7 @@ int main(void) {
 			motor4_mode = MOTOR_PID;
 		}
 
-		if (run_update >= 156) { // TIMER1_FREQ/156 = ~100Hz
+		if (run_update >= 195) { // TIMER1_FREQ/195 = ~100Hz
 			run_update=0;
 
 			update_pos();
