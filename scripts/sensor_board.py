@@ -11,7 +11,7 @@ from pyshared.humidity import *
 from wild_thumper.msg import Sensor
 
 # Board warming offset
-TEMP_ERROR = -2 # -5 # degree celsius
+TEMP_ERROR = -5 # degree celsius
 PRESSURE_ERROR = -4.5
 
 """
@@ -43,9 +43,13 @@ def get(addr=0x58):
 	pressure_kpa = P = (pressure_v/5 + 0.04) / 0.004 + PRESSURE_ERROR # datasheet
 
 	# fix temperature/humidity
-	temp_real = temp_mess + TEMP_ERROR 
-	humidity_abs = calc_humidity_abs(temp_mess, humidity_mess)
-	humidity_real = calc_humidity_rel(temp_real, humidity_abs)
+	if TEMP_ERROR:
+		temp_real = temp_mess + TEMP_ERROR
+		humidity_abs = calc_humidity_abs(temp_mess, humidity_mess)
+		humidity_real = calc_humidity_rel(temp_real, humidity_abs)
+	else:
+		temp_real = temp_mess
+		humidity_real = humidity_mess
 
 	return lux, temp_real, humidity_real, pressure_kpa, co
 

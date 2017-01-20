@@ -97,7 +97,7 @@
  */
 
 
-#define KP 0.061
+#define KP 0.062
 #define KI 0.12
 #define KD 0.0
 #define PID_T 0.01
