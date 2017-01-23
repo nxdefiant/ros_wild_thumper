@@ -102,6 +102,8 @@ class MoveBase:
 	def execute_dyn_reconf(self, config, level):
 		self.bClipRangeSensor = config["range_sensor_clip"]
 		self.range_sensor_max = config["range_sensor_max"]
+		self.odom_covar_xy = config["odom_covar_xy"]
+		self.odom_covar_angle = config["odom_covar_angle"]
 		return config
 
 	def set_motor_handicap(self, front, aft): # percent
@@ -212,24 +214,19 @@ class MoveBase:
 		odom.pose.pose.orientation.y = odom_quat[1]
 		odom.pose.pose.orientation.z = odom_quat[2]
 		odom.pose.pose.orientation.w = odom_quat[3]
-		odom.pose.covariance[0] = 1e-3 # x
-		odom.pose.covariance[7] = 1e-3 # y
-		odom.pose.covariance[14] = 1e6 # z
-		odom.pose.covariance[21] = 1e6 # rotation about X axis
-		odom.pose.covariance[28] = 1e6 # rotation about Y axis
-		odom.pose.covariance[35] = 0.03 # rotation about Z axis
+		odom.pose.covariance[0] = self.odom_covar_xy # x
+		odom.pose.covariance[7] = self.odom_covar_xy # y
+		odom.pose.covariance[14] = 99999 # z
+		odom.pose.covariance[21] = 99999 # rotation about X axis
+		odom.pose.covariance[28] = 99999 # rotation about Y axis
+		odom.pose.covariance[35] = self.odom_covar_angle # rotation about Z axis
 
 		# set the velocity
 		odom.child_frame_id = "base_footprint"
 		odom.twist.twist.linear.x = speed_trans
 		odom.twist.twist.linear.y = 0.0
 		odom.twist.twist.angular.z = speed_rot
-		odom.twist.covariance[0] = 1e-3 # x
-		odom.twist.covariance[7] = 1e-3 # y
-		odom.twist.covariance[14] = 1e6 # z
-		odom.twist.covariance[21] = 1e6 # rotation about X axis
-		odom.twist.covariance[28] = 1e6 # rotation about Y axis
-		odom.twist.covariance[35] = 0.03 # rotation about Z axis
+		odom.twist.covariance = odom.pose.covariance
 
 		# publish the message
 		self.pub_odom.publish(odom)
