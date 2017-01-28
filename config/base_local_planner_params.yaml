@@ -23,10 +23,13 @@ TrajectoryPlannerROS:
   # Whether to score based on the robot's heading to the path or its distance from the path, default: false
   heading_scoring: true
 
+  # How far to look ahead in time in seconds along the simulated trajectory when using heading scoring, default: 0.1
+  heading_scoring_timestep: 0.3
+
 DWAPlannerROS:
   acc_lim_x: 10.07
   acc_lim_y: 0.0
-  acc_lim_th: 12.00
+  acc_lim_th: 6.00
 
   max_vel_x: 0.5
   min_vel_x: 0.0 # no backward movement
@@ -40,3 +43,8 @@ DWAPlannerROS:
 
   xy_goal_tolerance: 0.1
   yaw_goal_tolerance: 0.2
+
+  # The weighting for how much the controller should attempt to avoid obstacles, default: 0.01
+  occdist_scale: 0.02
+  # The weighting for how much the controller should stay close to the path it was given, default: 32.0
+  path_distance_bias: 64.0

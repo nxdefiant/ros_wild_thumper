@@ -17,13 +17,13 @@
 		<!-- The maximum range of the sensor. If regions with no obstacles within the range of the sensor should appear as free -->
 		<param name="maxRange" value="10.0"/>
 		<!-- Minimum score for considering the outcome of the scan matching good. Can avoid jumping pose, default: 0.0, max: 600+ -->
-		<param name="minimumScore" value="0"/>
+		<param name="minimumScore" value="40"/>
 		<!-- Process a scan each time the robot translates this far -->
 		<param name="linearUpdate" value="0.30"/>
 		<!-- Process a scan each time the robot rotates this far -->
 		<param name="angularUpdate" value="0.436"/> <!-- 25 deg -->
 		<!-- Number of particles in the filter, default: 30 -->
-		<param name="particles" value="65"/>
+		<param name="particles" value="70"/>
 		<!-- Odometry error in translation as a function of translation (rho/rho) -->
 		<param name="srr" value="0.01"/>
 		<!-- Odometry error in translation as a function of rotation (rho/theta) -->
@@ -32,5 +32,9 @@
 		<param name="str" value="0.0"/>
 		<!-- Odometry error in rotation as a function of rotation (theta/theta) -->
 		<param name="stt" value="0.0"/>
+		<!-- The number of iterations of the scanmatcher, default: 5 -->
+		<param name="iterations" value="7"/>
+		<!-- The sigma of a beam used for likelihood computation, default: 0.075 -->
+		<param name="lsigma" value="0.085"/>
 	</node>
 </launch>
