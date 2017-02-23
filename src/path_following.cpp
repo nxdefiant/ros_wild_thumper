@@ -78,7 +78,7 @@ class PathFollower
 
 	int pathfinder(cv::Mat &frame, float &r, float &phi)
 	{
-		cv::vector<cv::Vec2f> lines;
+		std::vector<cv::Vec2f> lines;
 		cv::warpPerspective(frame, frame, transformation_matrix, frame.size(), INTER_LINEAR);
 		Mat roi(frame, Rect(roi_x, roi_y, roi_width, roi_height));
 
