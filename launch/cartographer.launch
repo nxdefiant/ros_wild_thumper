@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+<launch>
+	<param name="/use_sim_time" value="true" />
+
+	<param name="robot_description" command="$(find xacro)/xacro.py $(find wild_thumper)/urdf/wild_thumper.urdf.xacro"/>
+
+	<node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" />
+
+	<node name="cartographer_node" pkg="cartographer_ros" type="cartographer_node" args="-configuration_directory $(find wild_thumper)/config -configuration_basename cartographer.lua" output="screen">
+	</node>
+
+	<node name="rviz" pkg="rviz" type="rviz" required="true" args="-d $(find cartographer_ros)/configuration_files/demo_2d.rviz" />
+	<node name="playbag" pkg="rosbag" type="play" args="--clock $(arg bag_filename)" />
+</launch>
