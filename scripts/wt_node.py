@@ -71,8 +71,8 @@ class MoveBase:
 		self.handicap_last = (-1, -1)
 		self.pStripe = LPD8806(1, 0, 12)
 		rospy.Subscriber("cmd_vel_out", Twist, self.cmdVelReceived)
-		#rospy.Subscriber("imu", Imu, self.imuReceived)
 		rospy.Subscriber("led_stripe", LedStripe, self.led_stripe_received)
+		rospy.Subscriber("imu", Imu, self.imuReceived)
 		self.run()
 	
 	def run(self):
@@ -104,6 +104,13 @@ class MoveBase:
 		self.range_sensor_max = config["range_sensor_max"]
 		self.odom_covar_xy = config["odom_covar_xy"]
 		self.odom_covar_angle = config["odom_covar_angle"]
+		self.pitch_handicap_enable = config["pitch_handicap_enable"]
+		self.pitch_handicap_limit = config["pitch_handicap_limit"]
+		self.pitch_handicap_strength = config["pitch_handicap_strength"]
+
+		if not self.pitch_handicap_enable:
+			self.set_motor_handicap(0, 0)
+
 		return config
 
 	def set_motor_handicap(self, front, aft): # percent
@@ -114,15 +121,16 @@ class MoveBase:
 			self.handicap_last = (front, aft)
 
 	def imuReceived(self, msg):
-		(roll, pitch, yaw) = tf.transformations.euler_from_quaternion(msg.orientation.__getstate__())
-		if pitch > 30*pi/180:
-			val = (100.0/60)*abs(pitch)*180/pi
-			self.set_motor_handicap(int(val), 0)
-		elif pitch < -30*pi/180:
-			val = (100.0/60)*abs(pitch)*180/pi
-			self.set_motor_handicap(0, int(val))
-		else:
-			self.set_motor_handicap(0, 0)
+		if self.pitch_handicap_enable:
+			(roll, pitch, yaw) = tf.transformations.euler_from_quaternion(msg.orientation.__getstate__())
+			if pitch > self.pitch_handicap_limit*pi/180:
+				val = (100.0/self.pitch_handicap_strength)*abs(pitch)*180/pi
+				self.set_motor_handicap(int(val), 0)
+			elif pitch < -self.pitch_handicap_limit*pi/180:
+				val = (100.0/self.pitch_handicap_strength)*abs(pitch)*180/pi
+				self.set_motor_handicap(0, int(val))
+			else:
+				self.set_motor_handicap(0, 0)
 
 	def get_reset(self):
 		reset = struct.unpack(">B", i2c_read_reg(0x50, 0xA0, 1))[0]
