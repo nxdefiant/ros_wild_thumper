@@ -106,7 +106,7 @@ class MoveBase:
 		self.odom_covar_angle = config["odom_covar_angle"]
 		self.pitch_handicap_enable = config["pitch_handicap_enable"]
 		self.pitch_handicap_limit = config["pitch_handicap_limit"]
-		self.pitch_handicap_strength = config["pitch_handicap_strength"]
+		self.pitch_handicap_strength = 100-config["pitch_handicap_strength"]
 
 		if not self.pitch_handicap_enable:
 			self.set_motor_handicap(0, 0)
