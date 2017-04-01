@@ -13,22 +13,23 @@
 		<include file="$(find amcl)/examples/amcl_diff.launch" unless="$(arg slam_gmapping)" />
 		<group ns="amcl">
 			<param name="base_frame_id" value="base_footprint" />
-			<param name="laser_max_range" value="3.5" />
 			<param name="odom_model_type" value="diff-corrected" />
 			<!-- Specifies the expected noise in odometry's rotation estimate from the rotational component of the robot's motion. -->
-			<param name="odom_alpha1" value="0.0" />
+			<param name="odom_alpha1" value="0.00001" />
 			<!-- Specifies the expected noise in odometry's rotation estimate from translational component of the robot's motion. -->
-			<param name="odom_alpha2" value="0.0" />
+			<param name="odom_alpha2" value="0.00001" />
 			<!-- Specifies the expected noise in odometry's translation estimate from the translational component of the robot's motion. -->
 			<param name="odom_alpha3" value="0.01" />
 			<!-- Specifies the expected noise in odometry's translation estimate from the rotational component of the robot's motion. -->
 			<param name="odom_alpha4" value="0.03" />
 			<!-- How many evenly-spaced beams in each scan to be used when updating the filter. -->
-			<param name="laser_max_beams" value="60" />
+			<param name="laser_max_beams" value="50" />
 			<!-- Exponential decay rate for the slow average weight filter, used in deciding when to recover by adding random poses. -->
-			<param name="recovery_alpha_slow" value="0.001" />
+			<param name="recovery_alpha_slow" value="0.01" />
 			<!-- Exponential decay rate for the fast average weight filter, used in deciding when to recover by adding random poses. -->
-			<param name="recovery_alpha_fast" value="0.1" />
+			<param name="recovery_alpha_fast" value="0.2" />
+			<!-- Minimum allowed number of particles. -->
+			<param name="min_particles" value="100" />
 		</group>
 	</group>
 
