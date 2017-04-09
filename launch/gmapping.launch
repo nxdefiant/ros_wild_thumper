@@ -17,7 +17,7 @@
 		<!-- The maximum range of the sensor. If regions with no obstacles within the range of the sensor should appear as free -->
 		<param name="maxRange" value="10.0"/>
 		<!-- Minimum score for considering the outcome of the scan matching good. Can avoid jumping pose, default: 0.0, max: 600+ -->
-		<param name="minimumScore" value="40"/>
+		<param name="minimumScore" value="10"/>
 		<!-- Process a scan each time the robot translates this far -->
 		<param name="linearUpdate" value="0.30"/>
 		<!-- Process a scan each time the robot rotates this far -->
