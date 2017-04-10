@@ -65,10 +65,10 @@ class MoveBase:
 		self.pub_range_left = rospy.Publisher("range_left", Range, queue_size=16)
 		self.pub_range_right = rospy.Publisher("range_right", Range, queue_size=16)
 		self.cmd_vel = None
+		self.bMotorManual = False
 		self.set_speed(0, 0)
 		rospy.loginfo("Init done")
 		i2c_write_reg(0x50, 0x90, struct.pack("BB", 1, 1)) # switch direction
-		self.handicap_last = (-1, -1)
 		self.pStripe = LPD8806(1, 0, 12)
 		rospy.Subscriber("cmd_vel_out", Twist, self.cmdVelReceived)
 		rospy.Subscriber("led_stripe", LedStripe, self.led_stripe_received)
@@ -104,33 +104,26 @@ class MoveBase:
 		self.range_sensor_max = config["range_sensor_max"]
 		self.odom_covar_xy = config["odom_covar_xy"]
 		self.odom_covar_angle = config["odom_covar_angle"]
-		self.pitch_handicap_enable = config["pitch_handicap_enable"]
-		self.pitch_handicap_limit = config["pitch_handicap_limit"]
-		self.pitch_handicap_strength = 100-config["pitch_handicap_strength"]
-
-		if not self.pitch_handicap_enable:
-			self.set_motor_handicap(0, 0)
+		self.rollover_protect = config["rollover_protect"]
+		self.rollover_protect_limit = config["rollover_protect_limit"]
+		self.rollover_protect_pwm = config["rollover_protect_pwm"]
 
 		return config
 
-	def set_motor_handicap(self, front, aft): # percent
-		if front > 100: front = 100
-		if aft > 100: aft = 100
-		if self.handicap_last != (front, aft):
-			i2c_write_reg(0x50, 0x94, struct.pack(">bb", front, aft))
-			self.handicap_last = (front, aft)
-
 	def imuReceived(self, msg):
-		if self.pitch_handicap_enable:
+		if self.rollover_protect:
 			(roll, pitch, yaw) = tf.transformations.euler_from_quaternion(msg.orientation.__getstate__())
-			if pitch > self.pitch_handicap_limit*pi/180:
-				val = (100.0/self.pitch_handicap_strength)*abs(pitch)*180/pi
-				self.set_motor_handicap(int(val), 0)
-			elif pitch < -self.pitch_handicap_limit*pi/180:
-				val = (100.0/self.pitch_handicap_strength)*abs(pitch)*180/pi
-				self.set_motor_handicap(0, int(val))
-			else:
-				self.set_motor_handicap(0, 0)
+			if pitch > self.rollover_protect_limit*pi/180:
+				self.bMotorManual = True
+				i2c_write_reg(0x50, 0x3, struct.pack(">h", self.rollover_protect_pwm))
+				i2c_write_reg(0x50, 0x7, struct.pack(">h", self.rollover_protect_pwm))
+			elif pitch < -self.rollover_protect_limit*pi/180:
+				self.bMotorManual = True
+				i2c_write_reg(0x50, 0x1, struct.pack(">h", -self.rollover_protect_pwm))
+				i2c_write_reg(0x50, 0x5, struct.pack(">h", -self.rollover_protect_pwm))
+			elif self.bMotorManual:
+				i2c_write_reg(0x50, 0x1, struct.pack(">hhhh", 0, 0, 0, 0))
+				self.bMotorManual = False
 
 	def get_reset(self):
 		reset = struct.unpack(">B", i2c_read_reg(0x50, 0xA0, 1))[0]
@@ -244,9 +237,10 @@ class MoveBase:
 		i2c_write_reg(0x50, 0x50, struct.pack(">ff", trans, rot))
 
 	def cmdVelReceived(self, msg):
-		rospy.logdebug("Set new cmd_vel:", msg.linear.x, msg.angular.z)
-		self.cmd_vel = (msg.linear.x, msg.angular.z) # commit speed on next update cycle
-		rospy.logdebug("Set new cmd_vel done")
+		if not self.bMotorManual:
+			rospy.logdebug("Set new cmd_vel:", msg.linear.x, msg.angular.z)
+			self.cmd_vel = (msg.linear.x, msg.angular.z) # commit speed on next update cycle
+			rospy.logdebug("Set new cmd_vel done")
 
 	# http://rn-wissen.de/wiki/index.php/Sensorarten#Sharp_GP2D12
 	def get_dist_ir(self, num):
