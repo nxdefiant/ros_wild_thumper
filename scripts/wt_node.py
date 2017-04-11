@@ -115,15 +115,16 @@ class MoveBase:
 			(roll, pitch, yaw) = tf.transformations.euler_from_quaternion(msg.orientation.__getstate__())
 			if pitch > self.rollover_protect_limit*pi/180:
 				self.bMotorManual = True
-				i2c_write_reg(0x50, 0x3, struct.pack(">h", self.rollover_protect_pwm))
-				i2c_write_reg(0x50, 0x7, struct.pack(">h", self.rollover_protect_pwm))
+				i2c_write_reg(0x50, 0x1, struct.pack(">hhhh", 0, self.rollover_protect_pwm, 0, self.rollover_protect_pwm))
+				rospy.logwarn("Running forward rollver protection")
 			elif pitch < -self.rollover_protect_limit*pi/180:
 				self.bMotorManual = True
-				i2c_write_reg(0x50, 0x1, struct.pack(">h", -self.rollover_protect_pwm))
-				i2c_write_reg(0x50, 0x5, struct.pack(">h", -self.rollover_protect_pwm))
+				i2c_write_reg(0x50, 0x1, struct.pack(">hhhh", -self.rollover_protect_pwm, 0, -self.rollover_protect_pwm, 0))
+				rospy.logwarn("Running backward rollver protection")
 			elif self.bMotorManual:
 				i2c_write_reg(0x50, 0x1, struct.pack(">hhhh", 0, 0, 0, 0))
 				self.bMotorManual = False
+				rospy.logwarn("Rollver protection done")
 
 	def get_reset(self):
 		reset = struct.unpack(">B", i2c_read_reg(0x50, 0xA0, 1))[0]
