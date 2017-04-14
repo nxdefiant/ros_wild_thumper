@@ -65,6 +65,7 @@ class MoveBase:
 		self.pub_range_left = rospy.Publisher("range_left", Range, queue_size=16)
 		self.pub_range_right = rospy.Publisher("range_right", Range, queue_size=16)
 		self.cmd_vel = None
+		self.cur_vel = (0, 0)
 		self.bMotorManual = False
 		self.set_speed(0, 0)
 		rospy.loginfo("Init done")
@@ -96,6 +97,7 @@ class MoveBase:
 			i+=1
 			if self.cmd_vel != None:
 				self.set_speed(self.cmd_vel[0], self.cmd_vel[1])
+				self.cur_vel = self.cmd_vel
 				self.cmd_vel = None
 			rate.sleep()
 
@@ -111,7 +113,7 @@ class MoveBase:
 		return config
 
 	def imuReceived(self, msg):
-		if self.rollover_protect:
+		if self.rollover_protect and any(self.cur_vel):
 			(roll, pitch, yaw) = tf.transformations.euler_from_quaternion(msg.orientation.__getstate__())
 			if pitch > self.rollover_protect_limit*pi/180:
 				self.bMotorManual = True
@@ -124,6 +126,7 @@ class MoveBase:
 			elif self.bMotorManual:
 				i2c_write_reg(0x50, 0x1, struct.pack(">hhhh", 0, 0, 0, 0))
 				self.bMotorManual = False
+				self.cmd_vel = (0, 0)
 				rospy.logwarn("Rollver protection done")
 
 	def get_reset(self):
