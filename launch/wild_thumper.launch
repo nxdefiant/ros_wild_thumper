@@ -20,9 +20,7 @@
 		<param name="enable_odom_tf" value="false" if="$(arg use_imu)"/>
 	</node>
 
-	<node pkg="razor_imu_9dof" type="imu_node.py" name="imu_node" output="screen" if="$(arg use_imu)">
-		<rosparam file="$(find wild_thumper)/config/razor.yaml" command="load"/>
-	</node>
+	<node pkg="wild_thumper" type="tinkerforge_imu2.py" name="tinkerforge_imu_brick2" output="screen"/>
 
 	<node pkg="gpsd_client" type="gpsd_client"  name="gpsd_client" output="screen">
 		<param name="use_gps_time" value="false"/>
