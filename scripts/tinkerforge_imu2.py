@@ -52,18 +52,18 @@ class ImuBrickv2:
 		msg.angular_velocity.x = angular_velocity[0]/16.0
 		msg.angular_velocity.y = angular_velocity[1]/16.0
 		msg.angular_velocity.z = angular_velocity[2]/16.0
-		# Observed angular velocity variance: 0.006223 (10k samples), => round up to 0.01
+		# Observed angular velocity variance: 0.006223 (10k samples), => round up to 0.02
 		msg.angular_velocity_covariance = [
-			0.01, 0   , 0,
-			0   , 0.01, 0,
-			0   , 0   , 0.01
+			0.02, 0   , 0,
+			0   , 0.02, 0,
+			0   , 0   , 0.02
 		]
 
 		msg.linear_acceleration.x = linear_acceleration[0]/100.0
 		msg.linear_acceleration.y = linear_acceleration[1]/100.0
 		msg.linear_acceleration.z = linear_acceleration[2]/100.0
 		# Observed linear acceleration variance: 0.001532 (10k samples)
-		# Calculation for variance raken from razor imu:
+		# Calculation for variance taken from razor imu:
 		# nonliniarity spec: 1% of full scale (+-2G) => 0.2m/s^2
 		# Choosing 0.2 as std dev, variance = 0.2^2 = 0.04
 		msg.linear_acceleration_covariance = [
