@@ -14,16 +14,21 @@
  * 0x02 Distance left LSB
  * 0x03 Distance right MSB
  * 0x04 Distance right LSB
- * 0x05 Distance forward MSB
- * 0x06 Distance forward LSB
+ * 0x05 Distance forward1 MSB
+ * 0x06 Distance forward1 LSB
  * 0x07 Distance backward MSB
  * 0x08 Distance backward LSB
- * 0x15 Distance forward MSB (read only)
- * 0x16 Distance forward LSB (read only)
- * 0x17 Distance backward MSB (read only)
- * 0x18 Distance backward LSB (read only)
  * 0x09 Voltage MSB
  * 0x0A Voltage LSB
+ * 0x0B Distance forward2 MSB
+ * 0x0C Distance forward2 LSB
+ *
+ * 0x15 Distance forward1 MSB (read only)
+ * 0x16 Distance forward1 LSB (read only)
+ * 0x17 Distance backward MSB (read only)
+ * 0x18 Distance backward LSB (read only)
+ * 0x19 Distance forward2 MSB (read only)
+ * 0x1A Distance forward2 LSB (read only)
  *
  * 0xff Bootloader
  */
@@ -37,11 +42,14 @@ static volatile uint8_t ireg=0;
 static volatile uint8_t bootloader=0;
 static volatile uint16_t dist_left=0;
 static volatile uint16_t dist_right=0;
-static volatile uint16_t dist_forward=0;
+static volatile uint16_t dist_forward1=0;
+static volatile uint16_t dist_forward2=0;
 static volatile uint16_t dist_backward=0;
-static volatile uint8_t start_dist_fwd=0;
+static volatile uint8_t start_dist_fwd1=0;
+static volatile uint8_t start_dist_fwd2=0;
 static volatile uint8_t start_dist_bwd=0;
 static volatile uint16_t voltage=0;
+static volatile uint8_t pind_pre=0;
 
 ISR(TWI_vect)
 {
@@ -58,8 +66,9 @@ ISR(TWI_vect)
 				case 0x00: // register select
 					ireg = TWDR;
 
-					if (ireg == 0x05) start_dist_fwd=1;
+					if (ireg == 0x05) start_dist_fwd1=1;
 					if (ireg == 0x07) start_dist_bwd=1;
+					if (ireg == 0x09) start_dist_fwd2=1;
 
 					ireg--; // because we do ireg++ below
 					TWI_ACK;
@@ -92,12 +101,12 @@ ISR(TWI_vect)
 					TWDR = tmp16;
 					TWI_ACK;
 					break;
-				case 0x05: // Distance forward MSB
-					tmp16 = dist_forward;
+				case 0x05: // Distance forward1 MSB
+					tmp16 = dist_forward1;
 					TWDR = tmp16>>8;
 					TWI_ACK;
 					break;
-				case 0x06: // Distance forward LSB
+				case 0x06: // Distance forward1 LSB
 					TWDR = tmp16;
 					TWI_ACK;
 					break;
@@ -110,12 +119,30 @@ ISR(TWI_vect)
 					TWDR = tmp16;
 					TWI_ACK;
 					break;
-				case 0x15: // Distance forward MSB
-					tmp16 = dist_forward;
+				case 0x09: // Voltage MSB
+					tmp16 = voltage;
 					TWDR = tmp16>>8;
 					TWI_ACK;
 					break;
-				case 0x16: // Distance forward LSB
+				case 0x0A: // Voltage LSB
+					TWDR = tmp16;
+					TWI_ACK;
+					break;
+				case 0x0B: // Distance forward2 MSB
+					tmp16 = dist_forward2;
+					TWDR = tmp16>>8;
+					TWI_ACK;
+					break;
+				case 0x0C: // Distance forward2 LSB
+					TWDR = tmp16;
+					TWI_ACK;
+					break;
+				case 0x15: // Distance forward1 MSB
+					tmp16 = dist_forward1;
+					TWDR = tmp16>>8;
+					TWI_ACK;
+					break;
+				case 0x16: // Distance forward1 LSB
 					TWDR = tmp16;
 					TWI_ACK;
 					break;
@@ -128,12 +155,12 @@ ISR(TWI_vect)
 					TWDR = tmp16;
 					TWI_ACK;
 					break;
-				case 0x09: // Voltage MSB
-					tmp16 = voltage;
+				case 0x19: // Distance forward2 MSB
+					tmp16 = dist_forward2;
 					TWDR = tmp16>>8;
 					TWI_ACK;
 					break;
-				case 0x0A: // Voltage LSB
+				case 0x1A: // Distance forward2 LSB
 					TWDR = tmp16;
 					TWI_ACK;
 					break;
@@ -208,9 +235,9 @@ ISR(INT0_vect) {
 		t_start = t_now;
 	} else {
 		t_diff = t_now - t_start;
-		dist_forward = t_diff*2.7586 + 0.5; // t [탎] / 580 = mm
+		dist_forward1 = t_diff*2.7586 + 0.5; // t [탎] / 580 = mm
 		// disable this interrupt
-		EIMSK |= (1 << INT0);
+		EIMSK &= ~(1 << INT0);
 	}
 }
 
@@ -227,8 +254,31 @@ ISR(INT1_vect) {
 		t_diff = t_now - t_start;
 		dist_backward = t_diff*2.7586 + 0.5; // t [탎] / 580 = mm
 		// disable this interrupt
-		EIMSK |= (1 << INT1);
+		EIMSK &= ~(1 << INT1);
 	}
+}
+
+
+ISR(PCINT2_vect) {
+	uint8_t pind_cur = PIND;
+
+	if ((pind_cur ^ pind_pre) & (1<<4)) { // PCINT20
+		static uint16_t t_start=0;
+		uint16_t t_now = TCNT1;
+		uint16_t t_diff;
+
+		if (bit_is_set(pind_cur, 4)) { // high level
+			// start timer
+			t_start = t_now;
+		} else {
+			t_diff = t_now - t_start;
+			dist_forward2 = t_diff*2.7586 + 0.5; // t [탎] / 580 = mm
+			// disable this interrupt
+			PCMSK2 &= ~(1 << PCINT20);
+		}
+	}
+
+	pind_pre = pind_cur;
 }
 
 
@@ -247,6 +297,7 @@ int main(void) {
 
 	// External Interrupts
 	EICRA = (1 << ISC10) | (1 << ISC00);
+	PCICR = (1 << PCIE2);
 
 	printf("\r\nStart\r\n");
 
@@ -274,9 +325,9 @@ int main(void) {
 				break;
 		}
 
-		if (start_dist_fwd) {
-			start_dist_fwd = 0;
-			dist_forward = 0;
+		if (start_dist_fwd1) {
+			start_dist_fwd1 = 0;
+			dist_forward1 = 0;
 
 			DDRD |= (1 << 2);
 			PORTD |= (1 << 2);
@@ -284,6 +335,7 @@ int main(void) {
 			PORTD &= ~(1 << 2);
 			DDRD &= ~(1 << 2);
 			// wait for interrupt
+			EIFR &= (1 << INTF0); // clear old interrupt before enabling
 			EIMSK |= (1 << INT0);
 		}
 		if (start_dist_bwd) {
@@ -296,7 +348,22 @@ int main(void) {
 			PORTD &= ~(1 << 3);
 			DDRD &= ~(1 << 3);
 			// wait for interrupt
+			EIFR &= (1 << INTF1); // clear old interrupt before enabling
 			EIMSK |= (1 << INT1);
+		}
+		if (start_dist_fwd2) {
+			start_dist_fwd2 = 0;
+			dist_forward2 = 0;
+
+			// PD4 = PCINT20
+			DDRD |= (1 << 4);
+			PORTD |= (1 << 4);
+			_delay_us(10);
+			PORTD &= ~(1 << 4);
+			DDRD &= ~(1 << 4);
+			// wait for interrupt
+			pind_pre = PIND;
+			PCMSK2 |= (1 << PCINT20);
 		}
 
 		sleep_mode();
