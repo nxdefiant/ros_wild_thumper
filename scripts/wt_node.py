@@ -12,9 +12,9 @@ from math import *
 from geometry_msgs.msg import Twist
 from nav_msgs.msg import Odometry
 from diagnostic_msgs.msg import DiagnosticArray, DiagnosticStatus, KeyValue
+from dynamic_reconfigure.server import Server
 from sensor_msgs.msg import Imu, Range
 from wild_thumper.msg import LedStripe
-from dynamic_reconfigure.server import Server
 from wild_thumper.cfg import WildThumperConfig
 
 WHEEL_DIST = 0.248
@@ -31,7 +31,7 @@ class LPD8806:
 		self.update()
 	
 	def set(self, i, red=0, green=0, blue=0):
-		if red > 127 or green > 127 or blue >> 127 or red < 0 or green < 0 or blue < 0:
+		if red > 127 or green > 127 or blue > 127 or red < 0 or green < 0 or blue < 0:
 			raise Exception("Bad RGB Value")
 		self.l[i] = (red, green, blue)
 
@@ -255,7 +255,7 @@ class MoveBase:
 
 	def cmdVelReceived(self, msg):
 		if not self.bMotorManual:
-			rospy.logdebug("Set new cmd_vel:", msg.linear.x, msg.angular.z)
+			rospy.logdebug("Set new cmd_vel: %.2f %.2f", msg.linear.x, msg.angular.z)
 			self.cmd_vel = (msg.linear.x, msg.angular.z) # commit speed on next update cycle
 			rospy.logdebug("Set new cmd_vel done")
 
