@@ -137,13 +137,13 @@
 	<joint name="sonar_forward_left_joint" type="fixed">
 		<parent link="mounting_plate"/>
 		<child link="sonar_forward_left"/>
-		<origin xyz="0.115 -0.04 -0.012" rpy="0 0 0"/>
+		<origin xyz="0.115 0.04 -0.012" rpy="0 0 0"/>
 	</joint>
 
 	<joint name="sonar_forward_right_joint" type="fixed">
 		<parent link="mounting_plate"/>
 		<child link="sonar_forward_right"/>
-		<origin xyz="0.115 0.04 -0.012" rpy="0 0 0"/>
+		<origin xyz="0.115 -0.04 -0.012" rpy="0 0 0"/>
 	</joint>
 
 	<joint name="sonar_backward_joint" type="fixed">
