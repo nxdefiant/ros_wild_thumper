@@ -56,7 +56,19 @@
 		<origin xyz="0.107 0.0 0.04" rpy="0 0 0"/>
 	</xacro:asus_camera>
 
-	<link name="sonar_forward">
+	<link name="sonar_forward_left">
+		<visual>
+			<geometry>
+				<box size="0.016 0.044 0.02"/>
+			</geometry>
+			<origin xyz="${0.016/2} 0 0" rpy="0 0 0"/>
+			<material name="green">
+				<color rgba="0 1 0 0.8"/>
+			</material>
+		</visual>
+	</link>
+
+	<link name="sonar_forward_right">
 		<visual>
 			<geometry>
 				<box size="0.016 0.044 0.02"/>
@@ -122,10 +134,16 @@
 		<origin xyz="0.06 -0.03 0.058" rpy="0 0 0"/>
 	</joint>
 
-	<joint name="sonar_forward_joint" type="fixed">
+	<joint name="sonar_forward_left_joint" type="fixed">
 		<parent link="mounting_plate"/>
-		<child link="sonar_forward"/>
-		<origin xyz="0.115 0.0 -0.012" rpy="0 0 0"/>
+		<child link="sonar_forward_left"/>
+		<origin xyz="0.115 -0.04 -0.012" rpy="0 0 0"/>
+	</joint>
+
+	<joint name="sonar_forward_right_joint" type="fixed">
+		<parent link="mounting_plate"/>
+		<child link="sonar_forward_right"/>
+		<origin xyz="0.115 0.04 -0.012" rpy="0 0 0"/>
 	</joint>
 
 	<joint name="sonar_backward_joint" type="fixed">

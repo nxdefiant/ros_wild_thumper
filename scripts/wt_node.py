@@ -60,7 +60,8 @@ class MoveBase:
 		self.dyn_conf = Server(WildThumperConfig, self.execute_dyn_reconf)
 		self.pub_odom = rospy.Publisher("odom", Odometry, queue_size=16)
 		self.pub_diag = rospy.Publisher("diagnostics", DiagnosticArray, queue_size=16)
-		self.pub_range_fwd = rospy.Publisher("range_forward", Range, queue_size=16)
+		self.pub_range_fwd_left = rospy.Publisher("range_forward_left", Range, queue_size=16)
+		self.pub_range_fwd_right = rospy.Publisher("range_forward_right", Range, queue_size=16)
 		self.pub_range_bwd = rospy.Publisher("range_backward", Range, queue_size=16)
 		self.pub_range_left = rospy.Publisher("range_left", Range, queue_size=16)
 		self.pub_range_right = rospy.Publisher("range_right", Range, queue_size=16)
@@ -81,20 +82,32 @@ class MoveBase:
 		sleep(3) # wait 3s for ros to register and establish all subscriber connections before sending reset diag
 		reset_val = self.get_reset()
 		rospy.loginfo("Reset Status: 0x%x" % reset_val)
-		i = 0
+		ir_count = 0
+		sonar_count = 0
 		while not rospy.is_shutdown():
 			rospy.logdebug("Loop alive")
 			#print struct.unpack(">B", i2c_read_reg(0x50, 0xA2, 1))[0] # count test
 			self.get_motor_err()
 			self.get_odom()
 			self.get_voltage()
-			if i % 2:
-				self.get_dist_forward()
+
+			if ir_count == 0:
 				self.get_dist_left()
+				ir_count+=1
 			else:
-				self.get_dist_backward()
 				self.get_dist_right()
-			i+=1
+				ir_count+=1
+
+			if sonar_count == 0:
+				self.get_dist_forward_left()
+				sonar_count=0
+			elif sonar_count == 1:
+				self.get_dist_backward()
+				sonar_count+=1
+			elif sonar_count == 2:
+				self.get_dist_forward_right()
+				sonar_count=0
+
 			if self.cmd_vel != None:
 				self.set_speed(self.cmd_vel[0], self.cmd_vel[1])
 				self.cur_vel = self.cmd_vel
@@ -296,10 +309,10 @@ class MoveBase:
 			if dist > 69:
 				self.send_range(self.pub_range_right, "ir_right", Range.INFRARED, 17.4/(dist - 69), 0.04, 0.3, 1)
 
-	def get_dist_forward(self):
-		if self.pub_range_fwd.get_num_connections() > 0:
+	def get_dist_forward_left(self):
+		if self.pub_range_fwd_left.get_num_connections() > 0:
 			dist = self.read_dist_srf(0x15)
-			self.send_range(self.pub_range_fwd, "sonar_forward", Range.ULTRASOUND, dist, 0.04, self.range_sensor_max, 30)
+			self.send_range(self.pub_range_fwd, "sonar_forward_left", Range.ULTRASOUND, dist, 0.04, self.range_sensor_max, 30)
 			self.start_dist_srf(0x5) # get next value
 
 	def get_dist_backward(self):
@@ -307,6 +320,12 @@ class MoveBase:
 			dist = self.read_dist_srf(0x17)
 			self.send_range(self.pub_range_bwd, "sonar_backward", Range.ULTRASOUND, dist, 0.04, self.range_sensor_max, 30)
 			self.start_dist_srf(0x7) # get next value
+
+	def get_dist_forward_right(self):
+		if self.pub_range_fwd_right.get_num_connections() > 0:
+			dist = self.read_dist_srf(0x19)
+			self.send_range(self.pub_range_fwd, "sonar_forward_right", Range.ULTRASOUND, dist, 0.04, self.range_sensor_max, 30)
+			self.start_dist_srf(0x9) # get next value
 	
 	def led_stripe_received(self, msg):
 		for led in msg.leds:

@@ -10,6 +10,6 @@ inflation_layer:
   inflation_radius: 0.20
 
 range_layer:
-  topics: ["/range_forward", "/range_backward", "/range_left", "/range_right"]
+  topics: ["/range_forward_left", "/range_backward", "/range_forward_right"]
   no_readings_timeout: 1.0
   clear_on_max_reading: true
