@@ -68,7 +68,7 @@ ISR(TWI_vect)
 
 					if (ireg == 0x05) start_dist_fwd1=1;
 					if (ireg == 0x07) start_dist_bwd=1;
-					if (ireg == 0x09) start_dist_fwd2=1;
+					if (ireg == 0x0b) start_dist_fwd2=1;
 
 					ireg--; // because we do ireg++ below
 					TWI_ACK;
