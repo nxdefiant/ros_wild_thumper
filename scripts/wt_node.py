@@ -325,7 +325,7 @@ class MoveBase:
 		if self.pub_range_fwd_right.get_num_connections() > 0:
 			dist = self.read_dist_srf(0x19)
 			self.send_range(self.pub_range_fwd_right, "sonar_forward_right", Range.ULTRASOUND, dist, 0.04, self.range_sensor_max, 30)
-			self.start_dist_srf(0x9) # get next value
+			self.start_dist_srf(0xb) # get next value
 	
 	def led_stripe_received(self, msg):
 		for led in msg.leds:
