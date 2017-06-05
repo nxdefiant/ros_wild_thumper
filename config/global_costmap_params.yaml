@@ -8,4 +8,6 @@ global_costmap:
   - {name: inflation_layer, type: 'costmap_2d::InflationLayer'}
 
 inflation_layer:
-  inflation_radius: 0.25
+  # low slope decay curve
+  inflation_radius: 1.75
+  cost_scaling_factor: 2.58

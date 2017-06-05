@@ -25,9 +25,9 @@
 			<!-- How many evenly-spaced beams in each scan to be used when updating the filter. -->
 			<param name="laser_max_beams" value="50" />
 			<!-- Exponential decay rate for the slow average weight filter, used in deciding when to recover by adding random poses. -->
-			<param name="recovery_alpha_slow" value="0.01" />
+			<param name="recovery_alpha_slow" value="0.001" />
 			<!-- Exponential decay rate for the fast average weight filter, used in deciding when to recover by adding random poses. -->
-			<param name="recovery_alpha_fast" value="0.2" />
+			<param name="recovery_alpha_fast" value="0.1" />
 			<!-- Minimum allowed number of particles. -->
 			<param name="min_particles" value="100" />
 		</group>
