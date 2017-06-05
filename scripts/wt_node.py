@@ -100,12 +100,15 @@ class MoveBase:
 
 			if sonar_count == 0:
 				self.get_dist_forward_left()
+				self.update_dist_backward()
 				sonar_count+=1
 			elif sonar_count == 1:
 				self.get_dist_backward()
+				self.update_dist_forward_right()
 				sonar_count+=1
 			elif sonar_count == 2:
 				self.get_dist_forward_right()
+				self.update_dist_forward_left()
 				sonar_count=0
 
 			if self.cmd_vel != None:
@@ -313,19 +316,28 @@ class MoveBase:
 		if self.pub_range_fwd_left.get_num_connections() > 0:
 			dist = self.read_dist_srf(0x15)
 			self.send_range(self.pub_range_fwd_left, "sonar_forward_left", Range.ULTRASOUND, dist, 0.04, self.range_sensor_max, 30)
-			self.start_dist_srf(0x5) # get next value
+
+	def update_dist_forward_left(self):
+		if self.pub_range_fwd_left.get_num_connections() > 0:
+			self.start_dist_srf(0x5)
 
 	def get_dist_backward(self):
 		if self.pub_range_bwd.get_num_connections() > 0:
 			dist = self.read_dist_srf(0x17)
 			self.send_range(self.pub_range_bwd, "sonar_backward", Range.ULTRASOUND, dist, 0.04, self.range_sensor_max, 30)
-			self.start_dist_srf(0x7) # get next value
+
+	def update_dist_backward(self):
+		if self.pub_range_bwd.get_num_connections() > 0:
+			self.start_dist_srf(0x7)
 
 	def get_dist_forward_right(self):
 		if self.pub_range_fwd_right.get_num_connections() > 0:
 			dist = self.read_dist_srf(0x19)
 			self.send_range(self.pub_range_fwd_right, "sonar_forward_right", Range.ULTRASOUND, dist, 0.04, self.range_sensor_max, 30)
-			self.start_dist_srf(0xb) # get next value
+
+	def update_dist_forward_right(self):
+		if self.pub_range_fwd_right.get_num_connections() > 0:
+			self.start_dist_srf(0xb)
 	
 	def led_stripe_received(self, msg):
 		for led in msg.leds:
