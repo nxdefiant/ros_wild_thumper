@@ -1,12 +1,11 @@
+# only differences to config/global_costmap_params.yaml
 global_costmap:
   global_frame: odom
-  robot_base_frame: base_footprint
-  update_frequency: 5.0
-  static_map: true
   rolling_window: true
   width: 100.0
   height: 100.0
   resolution: 1.0
+  resolution: 0.05
   plugins:
   - {name: obstacle_layer, type: 'costmap_2d::ObstacleLayer'}
   - {name: inflation_layer, type: 'costmap_2d::InflationLayer'}
