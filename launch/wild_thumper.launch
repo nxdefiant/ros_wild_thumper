@@ -20,10 +20,28 @@
 		<param name="enable_odom_tf" value="false" if="$(arg use_imu)"/>
 	</node>
 
-	<node pkg="wild_thumper" type="tinkerforge_imu2.py" name="tinkerforge_imu_brick2" output="screen"/>
+	<node pkg="wild_thumper" type="tinkerforge_imu2.py" name="tinkerforge_imu_brick2" output="screen">
+		<param name="uid" value="6DdNSn"/>
+	</node>
 
 	<node pkg="gpsd_client" type="gpsd_client"  name="gpsd_client" output="screen">
 		<param name="use_gps_time" value="false"/>
+	</node>
+
+	<include file="$(find yocs_cmd_vel_mux)/launch/cmd_vel_mux.launch">
+		<arg name="config_file" value="$(find wild_thumper)/config/cmd_vel_mux.yaml" />
+		<arg name="nodelet_manager_name" value="nodelet_manager" />
+	</include>
+
+	<node pkg="robot_pose_ekf" type="robot_pose_ekf" name="robot_pose_ekf" output="screen" if="$(arg use_imu)">
+		<remap from="imu_data" to="imu"/>
+		<remap from="vo" to="gps"/>
+		<remap from="robot_pose_ekf/odom_combined" to="odom_combined"/>
+		<param name="output_frame" value="odom"/>
+		<param name="freq" value="20.0"/>
+		<param name="vo_used" value="false"/>
+		<param name="debug" value="false"/>
+		<param name="sensor_timeout" value="2.0"/>
 	</node>
 
 	<node pkg="gps_common" type="utm_odometry_node" name="gps_conv" output="screen">
@@ -32,19 +50,18 @@
 		<param name="child_frame_id" value="base_footprint"/>
 	</node>
 
-	<node pkg="robot_pose_ekf" type="robot_pose_ekf" name="robot_pose_ekf" output="screen" if="$(arg use_imu)">
-		<remap from="imu_data" to="imu"/>
-		<remap from="vo" to="gps"/>
-		<remap from="robot_pose_ekf/odom_combined" to="odom_combined"/>
-		<param name="output_frame" value="odom"/>
-		<param name="freq" value="20.0"/>
-		<param name="vo_used" value="true"/>
-		<param name="debug" value="false"/>
-		<param name="sensor_timeout" value="2.0"/>
-	</node>
+	<!--
+	<include file="$(find wild_thumper)/launch/robot_localization.launch" if="$(arg use_imu)"/>
+	<node pkg="robot_localization" type="navsat_transform_node" name="navsat_transform_node">
+		<param name="magnetic_declination_radians" value="0.48"/>
+		<param name="yaw_offset" value="1.5708"/>
+		<param name="zero_altitude" value="true"/>
+		<param name="broadcast_utm_transform" value="true"/>
 
-	<include file="$(find yocs_cmd_vel_mux)/launch/cmd_vel_mux.launch">
-		<arg name="config_file" value="$(find wild_thumper)/config/cmd_vel_mux.yaml" />
-		<arg name="nodelet_manager_name" value="nodelet_manager" />
-	</include>
+		<remap from="/imu/data" to="imu"/>
+		<remap from="/gps/fix" to="fix" />
+		<remap from="/odometry/filtered" to="odom_combined"/>
+		<remap from="/odometry/gps" to="gps"/>
+	</node>
+	-->
 </launch>
