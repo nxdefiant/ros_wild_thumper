@@ -11,8 +11,8 @@ from pyshared.humidity import *
 from wild_thumper.msg import Sensor
 
 # Board warming offset
-TEMP_ERROR = -5 # degree celsius
-PRESSURE_ERROR = -4.5
+TEMP_ERROR = 0 # -5 # degree celsius
+PRESSURE_ERROR = -2.5
 
 """
 LDR:

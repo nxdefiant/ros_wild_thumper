@@ -15,7 +15,7 @@
 		<rosparam command="load" file="$(find wild_thumper)/config/analyzers.yaml"/>
 	</node>
 
-	<node pkg="wild_thumper" type="wt_node.py" name="wild_thumper" output="screen" respawn="false" required="false">
+	<node pkg="wild_thumper" type="wt_node.py" name="wild_thumper" output="screen" respawn="false" required="true">
 		<param name="enable_odom_tf" value="true" unless="$(arg use_imu)"/>
 		<param name="enable_odom_tf" value="false" if="$(arg use_imu)"/>
 	</node>
@@ -33,6 +33,7 @@
 		<arg name="nodelet_manager_name" value="nodelet_manager" />
 	</include>
 
+	<!--
 	<node pkg="robot_pose_ekf" type="robot_pose_ekf" name="robot_pose_ekf" output="screen" if="$(arg use_imu)">
 		<remap from="imu_data" to="imu"/>
 		<remap from="vo" to="gps"/>
@@ -49,8 +50,8 @@
 		<param name="frame_id" value="odom"/>
 		<param name="child_frame_id" value="base_footprint"/>
 	</node>
+	-->
 
-	<!--
 	<include file="$(find wild_thumper)/launch/robot_localization.launch" if="$(arg use_imu)"/>
 	<node pkg="robot_localization" type="navsat_transform_node" name="navsat_transform_node">
 		<param name="magnetic_declination_radians" value="0.48"/>
@@ -63,5 +64,4 @@
 		<remap from="/odometry/filtered" to="odom_combined"/>
 		<remap from="/odometry/gps" to="gps"/>
 	</node>
-	-->
 </launch>

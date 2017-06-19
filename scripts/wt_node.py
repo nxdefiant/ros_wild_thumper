@@ -237,9 +237,9 @@ class MoveBase:
 		odom.pose.pose.orientation.w = odom_quat[3]
 		odom.pose.covariance[0] = self.odom_covar_xy # x
 		odom.pose.covariance[7] = self.odom_covar_xy # y
-		odom.pose.covariance[14] = 99999 # z
-		odom.pose.covariance[21] = 99999 # rotation about X axis
-		odom.pose.covariance[28] = 99999 # rotation about Y axis
+		odom.pose.covariance[14] = self.odom_covar_xy # z
+		odom.pose.covariance[21] = self.odom_covar_angle # rotation about X axis
+		odom.pose.covariance[28] = self.odom_covar_angle # rotation about Y axis
 		odom.pose.covariance[35] = self.odom_covar_angle # rotation about Z axis
 
 		# set the velocity

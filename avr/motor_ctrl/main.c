@@ -97,8 +97,8 @@
  */
 
 
-#define KP 0.062
-#define KI 0.12
+#define KP 0.09
+#define KI 0.07
 #define KD 0.0
 #define PID_T 0.01
 // wheel diameter=12cm, encoder=48cpr, gear ratio=1:47
@@ -109,6 +109,7 @@
 #define STEP_PER_M_RIGHT (STEP_PER_M)
 #define WHEEL_DIST 0.39912 // Measured: 0.252
 #define PWM_BREAK INT16_MIN
+#define STALL_LIMIT 140000
 
 #define TWI_ACK   TWCR = (1<<TWEA) | (1<<TWINT) | (1<<TWEN) | (1<<TWIE)
 #define TWI_RESET TWCR &= ~((1 << TWSTO) | (1 << TWEN)); TWI_ACK
@@ -899,25 +900,25 @@ static void update_pid(void) {
 	static int32_t esum4=0;
 
 	// protect motors from damage if stalling
-	if (labs(esum1) > 140000 && speed1 == 0) {
+	if (labs(esum1) > STALL_LIMIT && speed1 == 0) {
 		motor1 = 0;
 		motor1_mode = MOTOR_MANUAL;
 		error_state |= (1<<4);
 		esum1 = 0;
 	}	
-	if (labs(esum2) > 140000 && speed2 == 0) {
+	if (labs(esum2) > STALL_LIMIT && speed2 == 0) {
 		motor2 = 0;
 		motor2_mode = MOTOR_MANUAL;
 		error_state |= (1<<5);
 		esum2 = 0;
 	}	
-	if (labs(esum3) > 140000 && speed3 == 0) {
+	if (labs(esum3) > STALL_LIMIT && speed3 == 0) {
 		motor3 = 0;
 		motor3_mode = MOTOR_MANUAL;
 		error_state |= (1<<6);
 		esum3 = 0;
 	}	
-	if (labs(esum4) > 140000 && speed4 == 0) {
+	if (labs(esum4) > STALL_LIMIT && speed4 == 0) {
 		motor4 = 0;
 		motor4_mode = MOTOR_MANUAL;
 		error_state |= (1<<7);
