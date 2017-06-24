@@ -97,14 +97,14 @@
  */
 
 
-#define KP 0.09
-#define KI 0.07
+#define KP 0.062
+#define KI 0.12
 #define KD 0.0
 #define PID_T 0.01
 // wheel diameter=12cm, encoder=48cpr, gear ratio=1:47
 // STEP_PER_M = 48*47/(d*pi)
 // Left real diameter: 0.12808, Right real diameter: 0.121
-#define STEP_PER_M 5770.8
+#define STEP_PER_M 5573.0
 #define STEP_PER_M_LEFT (STEP_PER_M)
 #define STEP_PER_M_RIGHT (STEP_PER_M)
 #define WHEEL_DIST 0.39912 // Measured: 0.252
