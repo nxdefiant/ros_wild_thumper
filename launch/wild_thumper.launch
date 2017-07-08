@@ -33,28 +33,9 @@
 		<arg name="nodelet_manager_name" value="nodelet_manager" />
 	</include>
 
-	<!--
-	<node pkg="robot_pose_ekf" type="robot_pose_ekf" name="robot_pose_ekf" output="screen" if="$(arg use_imu)">
-		<remap from="imu_data" to="imu"/>
-		<remap from="vo" to="gps"/>
-		<remap from="robot_pose_ekf/odom_combined" to="odom_combined"/>
-		<param name="output_frame" value="odom"/>
-		<param name="freq" value="20.0"/>
-		<param name="vo_used" value="false"/>
-		<param name="debug" value="false"/>
-		<param name="sensor_timeout" value="2.0"/>
-	</node>
-
-	<node pkg="gps_common" type="utm_odometry_node" name="gps_conv" output="screen">
-		<remap from="odom" to="gps"/>
-		<param name="frame_id" value="odom"/>
-		<param name="child_frame_id" value="base_footprint"/>
-	</node>
-	-->
-
 	<include file="$(find wild_thumper)/launch/robot_localization.launch" if="$(arg use_imu)"/>
-	<node pkg="robot_localization" type="navsat_transform_node" name="navsat_transform_node">
-		<param name="magnetic_declination_radians" value="0.48"/>
+	<node pkg="robot_localization" type="navsat_transform_node" name="navsat_transform_node" output="screen">
+		<param name="magnetic_declination_radians" value="0.047"/>
 		<param name="yaw_offset" value="1.5708"/>
 		<param name="zero_altitude" value="true"/>
 		<param name="broadcast_utm_transform" value="true"/>
