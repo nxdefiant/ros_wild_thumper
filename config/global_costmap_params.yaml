@@ -7,7 +7,7 @@ global_costmap:
   - {name: static_layer, type: 'costmap_2d::StaticLayer'}
   - {name: inflation_layer, type: 'costmap_2d::InflationLayer'}
 
-inflation_layer:
-  # low slope decay curve
-  inflation_radius: 1.75
-  cost_scaling_factor: 2.58
+  inflation_layer:
+    # low slope decay curve
+    inflation_radius: 1.75
+    cost_scaling_factor: 2.58
