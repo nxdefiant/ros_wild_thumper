@@ -3,6 +3,7 @@
 	<arg name="slam_gmapping" default="false" />
 	<arg name="map_file" default="$(find wild_thumper)/data/map.yaml" />
 	<arg name="global_utm" default="false" />
+	<arg name="global_odom" default="false" />
 	<arg name="nomap" default="false" />
 	<arg name="base_local_planner" default="base_local_planner/TrajectoryPlannerROS"/> <!-- base_local_planner/TrajectoryPlannerROS || dwa_local_planner/DWAPlannerROS -->
 
@@ -42,7 +43,7 @@
 		<rosparam file="$(find wild_thumper)/config/costmap_common_params.yaml" command="load" ns="global_costmap" />
 		<rosparam file="$(find wild_thumper)/config/costmap_common_params.yaml" command="load" ns="local_costmap" />
 		<rosparam file="$(find wild_thumper)/config/global_costmap_params.yaml" command="load" />
-		<rosparam file="$(find wild_thumper)/config/global_costmap_params_nomap.yaml" command="load" if="$(arg nomap)" />
+		<rosparam file="$(find wild_thumper)/config/global_costmap_params_odom.yaml" command="load" if="$(arg global_odm)" />
 		<rosparam file="$(find wild_thumper)/config/global_costmap_params_utm.yaml" command="load" if="$(arg global_utm)" />
 		<rosparam file="$(find wild_thumper)/config/local_costmap_params.yaml" command="load" />
 		<rosparam file="$(find wild_thumper)/config/base_local_planner_params.yaml" command="load" />
