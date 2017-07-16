@@ -6,6 +6,8 @@ import rospy
 import tf
 import actionlib
 import tf2_ros
+import dynamic_reconfigure.client
+import numpy as np
 from move_base_msgs.msg import MoveBaseAction, MoveBaseGoal
 from actionlib_msgs.msg import GoalStatus
 from geodesy import utm
@@ -14,9 +16,15 @@ from math import *
 class GPSGotoCoords:
 	def __init__(self):
 		rospy.init_node('gps_goto_coords')
+		rospy.on_shutdown(self.on_shutdown)
+
 		self.move_base = actionlib.SimpleActionClient("move_base", MoveBaseAction)
 		self.tfBuffer = tf2_ros.Buffer()
 		self.listener = tf2_ros.TransformListener(self.tfBuffer)
+
+		rospy.loginfo("Setting paramters")
+		self.dynreconf = dynamic_reconfigure.client.Client("/move_base/TrajectoryPlannerROS")
+		self.dynreconf.update_configuration({'max_vel_x': 0.5, 'max_vel_theta': 1.0})
 
 		rospy.loginfo("Waiting for the move_base action server to come up")
 		self.move_base.wait_for_server()
@@ -44,7 +52,14 @@ class GPSGotoCoords:
 		goal.target_pose.pose.orientation.w = odom_quat[3]
 		self.move_base.send_goal(goal)
 
-		self.move_base.wait_for_result()
+		while not self.move_base.wait_for_result(rospy.Duration(1.0)) and not rospy.is_shutdown():
+			# Get the current position
+			pos = self.tfBuffer.lookup_transform("utm", 'base_link', rospy.Time(0), rospy.Duration(2.0))
+			# Cancel if we are close enough to goal
+			if np.linalg.norm([point.northing - pos.transform.translation.y, point.easting - pos.transform.translation.x]) < 1:
+				rospy.loginfo("Goal within 1m, canceling")
+				self.move_base.cancel_goal()
+				return
 
 		if self.move_base.get_state() == GoalStatus.SUCCEEDED:
 			rospy.loginfo("The base moved to (%f, %f)" % (lat, lon))
@@ -52,11 +67,17 @@ class GPSGotoCoords:
 			rospy.logerr("The base failed to (%f, %f)" % (lat, lon))
 			exit(1)
 
+	def on_shutdown(self):
+		rospy.loginfo("Canceling all goals")
+		self.move_base.cancel_all_goals()
+
 	def run(self, sCSVFile):
 		f = open(sCSVFile)
 		for line in f:
 			pos = line.split(",")
 			self.next_pos(float(pos[0]), float(pos[1]))
+			self.move_base.cancel_all_goals()
+
 
 if __name__ == "__main__":
 	p = GPSGotoCoords()
