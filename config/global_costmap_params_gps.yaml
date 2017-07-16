@@ -1,6 +1,6 @@
 # only differences to config/global_costmap_params.yaml
 global_costmap:
-  global_frame: utm
+  global_frame: gps
   rolling_window: true
   width: 200.0
   height: 200.0
