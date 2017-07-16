@@ -24,25 +24,13 @@
 		<param name="uid" value="6DdNSn"/>
 	</node>
 
-	<node pkg="gpsd_client" type="gpsd_client"  name="gpsd_client" output="screen">
-		<param name="use_gps_time" value="false"/>
-	</node>
-
 	<include file="$(find yocs_cmd_vel_mux)/launch/cmd_vel_mux.launch">
 		<arg name="config_file" value="$(find wild_thumper)/config/cmd_vel_mux.yaml" />
 		<arg name="nodelet_manager_name" value="nodelet_manager" />
 	</include>
 
-	<include file="$(find wild_thumper)/launch/robot_localization.launch" if="$(arg use_imu)"/>
-	<node pkg="robot_localization" type="navsat_transform_node" name="navsat_transform_node" output="screen">
-		<param name="magnetic_declination_radians" value="0.047"/>
-		<param name="yaw_offset" value="1.5708"/>
-		<param name="zero_altitude" value="true"/>
-		<param name="broadcast_utm_transform" value="true"/>
-
-		<remap from="/imu/data" to="imu"/>
-		<remap from="/gps/fix" to="fix" />
-		<remap from="/odometry/filtered" to="odom_combined"/>
-		<remap from="/odometry/gps" to="gps"/>
+	<node pkg="robot_localization" type="ekf_localization_node" name="ekf_localization" clear_params="true" output="screen">
+		<rosparam command="load" file="$(find wild_thumper)/config/robot_localization.yaml"/>
+		<remap from="odometry/filtered" to="odom_combined"/>
 	</node>
 </launch>
