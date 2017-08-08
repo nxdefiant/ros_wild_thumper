@@ -2,11 +2,12 @@
 <launch>
 	<node pkg="gpsd_client" type="gpsd_client"  name="gpsd_client" output="screen">
 		<param name="use_gps_time" value="false"/>
+		<param name="frame_id" value="gps"/>
 	</node>
 
 	<node pkg="robot_localization" type="navsat_transform_node" name="navsat_transform_node" output="screen">
 		<param name="magnetic_declination_radians" value="0.047"/>
-		<param name="yaw_offset" value="1.5708"/>
+		<param name="yaw_offset" value="0.0"/>
 		<param name="zero_altitude" value="true"/>
 		<param name="broadcast_utm_transform" value="true"/>
 
