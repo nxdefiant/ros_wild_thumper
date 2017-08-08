@@ -69,6 +69,7 @@ class MoveBase:
 		self.cur_vel = (0, 0)
 		self.bMotorManual = False
 		self.set_speed(0, 0)
+		self.volt_last_warn = rospy.Time.now()
 		rospy.loginfo("Init done")
 		i2c_write_reg(0x50, 0x90, struct.pack("BB", 1, 1)) # switch direction
 		self.pStripe = LPD8806(1, 0, 12)
@@ -209,6 +210,10 @@ class MoveBase:
 
 		msg.status.append(stat)
 		self.pub_diag.publish(msg)
+
+		if volt < 7 and (rospy.Time.now() - self.volt_last_warn).to_sec() > 10:
+			rospy.logerr("Voltage critical: %.2fV" % (volt))
+			self.volt_last_warn = rospy.Time.now()
 
 
 	def get_odom(self):
