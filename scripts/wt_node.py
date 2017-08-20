@@ -13,7 +13,7 @@ from geometry_msgs.msg import Twist
 from nav_msgs.msg import Odometry
 from diagnostic_msgs.msg import DiagnosticArray, DiagnosticStatus, KeyValue
 from dynamic_reconfigure.server import Server
-from sensor_msgs.msg import Imu, Range
+from sensor_msgs.msg import Imu, Range, BatteryState
 from wild_thumper.msg import LedStripe
 from wild_thumper.cfg import WildThumperConfig
 
@@ -65,6 +65,7 @@ class MoveBase:
 		self.pub_range_bwd = rospy.Publisher("range_backward", Range, queue_size=16)
 		self.pub_range_left = rospy.Publisher("range_left", Range, queue_size=16)
 		self.pub_range_right = rospy.Publisher("range_right", Range, queue_size=16)
+		self.pub_battery = rospy.Publisher("battery", BatteryState, queue_size=16)
 		self.cmd_vel = None
 		self.cur_vel = (0, 0)
 		self.bMotorManual = False
@@ -210,6 +211,20 @@ class MoveBase:
 
 		msg.status.append(stat)
 		self.pub_diag.publish(msg)
+
+		if self.pub_battery.get_num_connections() > 0:
+			batmsg = BatteryState()
+			batmsg.header.stamp = rospy.Time.now()
+			batmsg.voltage = volt
+			batmsg.current = float('nan')
+			batmsg.charge = float('nan')
+			batmsg.capacity = float('nan')
+			batmsg.design_capacity = 5.0
+			batmsg.percentage = float('nan')
+			batmsg.power_supply_status = BatteryState.POWER_SUPPLY_STATUS_DISCHARGING
+			batmsg.power_supply_health = BatteryState.POWER_SUPPLY_HEALTH_UNKNOWN
+			batmsg.power_supply_technology = BatteryState.POWER_SUPPLY_TECHNOLOGY_NIMH
+			self.pub_battery.publish(batmsg)
 
 		if volt < 7 and (rospy.Time.now() - self.volt_last_warn).to_sec() > 10:
 			rospy.logerr("Voltage critical: %.2fV" % (volt))
