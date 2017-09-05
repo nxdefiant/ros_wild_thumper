@@ -5,6 +5,9 @@
 #include <avr/io.h>
 #include <avr/interrupt.h>
 #include <avr/sleep.h>
+#include <util/twi.h>
+#include <avr/eeprom.h>
+#include <avr/wdt.h>
 #include "uart.h"
 
 /*
@@ -111,9 +114,9 @@
 #define PWM_BREAK INT16_MIN
 #define STALL_LIMIT 140000
 
-#define TWI_ACK   TWCR = (1<<TWEA) | (1<<TWINT) | (1<<TWEN) | (1<<TWIE)
-#define TWI_RESET TWCR &= ~((1 << TWSTO) | (1 << TWEN)); TWI_ACK
+#define TWI_ACK   TWCR = (1<<TWINT) | (1<<TWEA) | (1<<TWEN) | (1<<TWIE)
 #define TWI_NAK   TWCR = (1<<TWINT) | (1<<TWEN) | (1<<TWIE)
+#define TWI_RESET TWCR = (1<<TWINT) | (1<<TWEA) | (1<<TWSTO) | (1<<TWEN) | (1<<TWIE);
 #define ENABLE_PWM_MOTOR1  TCCR1A |=  (1 << COM1A1)
 #define ENABLE_PWM_MOTOR2  TCCR1A |=  (1 << COM1B1)
 #define ENABLE_PWM_MOTOR3  TCCR2  |=  (1 << COM21);
@@ -188,13 +191,13 @@ ISR(TWI_vect)
 	static ufloat_t tmp_speed;
 	static ufloat_t tmp_angle;
 
-	switch (TWSR & 0xF8)
+	switch(TW_STATUS)
 	{
-		case 0x60: // start write
+		case TW_SR_SLA_ACK: // start write
 			TWI_ACK;
 			ireg = 0;
 			break;
-		case 0x80: // write
+		case TW_SR_DATA_ACK: // write
 			switch(ireg) {
 				case 0x00: // register select
 					ireg = TWDR;
@@ -381,8 +384,8 @@ ISR(TWI_vect)
 			}
 			ireg++;
 			break;
-		case 0xA8: // start read
-		case 0xB8: // read
+		case TW_ST_SLA_ACK: // start read
+		case TW_ST_DATA_ACK: // read
 			switch(ireg) {
 				case 0x02: // Motor 1 PWM
 					TWDR = OCR1A;
@@ -615,6 +618,9 @@ ISR(TWI_vect)
 					TWI_NAK;
 			}
 			ireg++;
+			break;
+		case TW_SR_STOP:
+			TWI_ACK;
 			break;
 		default:
 			TWI_RESET;
@@ -1041,7 +1047,7 @@ int main(void) {
 
 	// I2C
 	TWAR = 0x50;
-	TWI_RESET;
+	TWI_ACK;
 
 	// Motor 1 & 2
 	// Also used for PWM frequency TIMER1_FREQ (F_CPU/256)
@@ -1082,10 +1088,11 @@ int main(void) {
 			case 0xff: // Magic reg that starts the bootloader
 				if (bootloader == 0xa5) {
 					cli();
-					{
-						void (*start)(void) = (void*)0x1800;
-						start();
-					}
+					// write mark to first area in eeprom
+					eeprom_write_byte((uint8_t*)0, 123);
+					eeprom_busy_wait();
+					// Use watchdog to restart
+					wdt_enable(WDTO_15MS);
 				}
 				break;
 		}
