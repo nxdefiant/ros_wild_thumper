@@ -122,6 +122,7 @@ class MoveBase:
 	def execute_dyn_reconf(self, config, level):
 		self.bClipRangeSensor = config["range_sensor_clip"]
 		self.range_sensor_max = config["range_sensor_max"]
+		self.range_sensor_fov = config["range_sensor_fov"]
 		self.odom_covar_xy = config["odom_covar_xy"]
 		self.odom_covar_angle = config["odom_covar_angle"]
 		self.rollover_protect = config["rollover_protect"]
@@ -335,7 +336,7 @@ class MoveBase:
 	def get_dist_forward_left(self):
 		if self.pub_range_fwd_left.get_num_connections() > 0:
 			dist = self.read_dist_srf(0x15)
-			self.send_range(self.pub_range_fwd_left, "sonar_forward_left", Range.ULTRASOUND, dist, 0.04, self.range_sensor_max, 30)
+			self.send_range(self.pub_range_fwd_left, "sonar_forward_left", Range.ULTRASOUND, dist, 0.04, self.range_sensor_max, self.range_sensor_fov)
 
 	def update_dist_forward_left(self):
 		if self.pub_range_fwd_left.get_num_connections() > 0:
@@ -344,7 +345,7 @@ class MoveBase:
 	def get_dist_backward(self):
 		if self.pub_range_bwd.get_num_connections() > 0:
 			dist = self.read_dist_srf(0x17)
-			self.send_range(self.pub_range_bwd, "sonar_backward", Range.ULTRASOUND, dist, 0.04, self.range_sensor_max, 30)
+			self.send_range(self.pub_range_bwd, "sonar_backward", Range.ULTRASOUND, dist, 0.04, self.range_sensor_max, self.range_sensor_fov)
 
 	def update_dist_backward(self):
 		if self.pub_range_bwd.get_num_connections() > 0:
@@ -353,7 +354,7 @@ class MoveBase:
 	def get_dist_forward_right(self):
 		if self.pub_range_fwd_right.get_num_connections() > 0:
 			dist = self.read_dist_srf(0x19)
-			self.send_range(self.pub_range_fwd_right, "sonar_forward_right", Range.ULTRASOUND, dist, 0.04, self.range_sensor_max, 30)
+			self.send_range(self.pub_range_fwd_right, "sonar_forward_right", Range.ULTRASOUND, dist, 0.04, self.range_sensor_max, self.range_sensor_fov)
 
 	def update_dist_forward_right(self):
 		if self.pub_range_fwd_right.get_num_connections() > 0:
