@@ -36,7 +36,7 @@
 
 	<include file="$(find wild_thumper)/launch/gmapping.launch" if="$(arg slam_gmapping)" />
 
-	<node pkg="move_base" type="move_base" respawn="false" name="move_base" output="screen">
+	<node pkg="move_base" type="move_base" respawn="false" name="move_base" output="screen" clear_params="true">
 		<param name="base_local_planner" value="$(arg base_local_planner)"/>
 		<param name="controller_frequency" value="10.0" />
 		<rosparam file="$(find wild_thumper)/config/costmap_common_params.yaml" command="load" ns="global_costmap" />

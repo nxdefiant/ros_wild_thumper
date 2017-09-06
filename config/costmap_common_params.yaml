@@ -13,3 +13,5 @@ range_layer:
   topics: ["/range_forward_left", "/range_backward", "/range_forward_right"]
   no_readings_timeout: 1.0
   clear_on_max_reading: true
+  mark_threshold: 0.7
+  inflate_cone: 0.0
