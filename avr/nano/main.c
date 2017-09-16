@@ -5,6 +5,9 @@
 #include <avr/interrupt.h>
 #include <avr/sleep.h>
 #include <util/delay.h>
+#include <util/twi.h>
+#include <avr/eeprom.h>
+#include <avr/wdt.h>
 #include "uart.h"
 
 /*
@@ -34,9 +37,9 @@
  */
 
 
-#define TWI_ACK		TWCR = (1<<TWEA) | (1<<TWINT) | (1<<TWEN) | (1<<TWIE)
-#define TWI_RESET	TWCR &= ~((1 << TWSTO) | (1 << TWEN)); TWI_ACK
-#define TWI_NAK		TWCR = (1<<TWINT) | (1<<TWEN) | (1<<TWIE)
+#define TWI_ACK   TWCR = (1<<TWINT) | (1<<TWEA) | (1<<TWEN) | (1<<TWIE)
+#define TWI_NAK   TWCR = (1<<TWINT) | (1<<TWEN) | (1<<TWIE)
+#define TWI_RESET TWCR = (1<<TWINT) | (1<<TWEA) | (1<<TWSTO) | (1<<TWEN) | (1<<TWIE);
 
 static volatile uint8_t ireg=0;
 static volatile uint8_t bootloader=0;
@@ -55,13 +58,13 @@ ISR(TWI_vect)
 {
 	static int16_t tmp16=0;
 
-	switch (TWSR & 0xF8)
+	switch(TW_STATUS)
 	{  
-		case 0x60: // start write
+		case TW_SR_SLA_ACK: // start write
 			TWI_ACK;
 			ireg = 0;
 			break;
-		case 0x80: // write
+		case TW_SR_DATA_ACK: // write
 			switch(ireg) {
 				case 0x00: // register select
 					ireg = TWDR;
@@ -80,8 +83,8 @@ ISR(TWI_vect)
 			}
 			ireg++;
 			break;
-		case 0xA8: // start read
-		case 0xB8: // read
+		case TW_ST_SLA_ACK: // start read
+		case TW_ST_DATA_ACK: // read
 			switch(ireg) {
 				case 0x01: // Distance left MSB
 					tmp16 = dist_left;
@@ -169,6 +172,9 @@ ISR(TWI_vect)
 					TWI_NAK;
 			}
 			ireg++;
+			break;
+		case TW_SR_STOP:
+			TWI_ACK;
 			break;
 		default:
 			TWI_RESET;
@@ -289,7 +295,7 @@ int main(void) {
 
 	// I2C
 	TWAR = 0x52;
-	TWI_RESET;
+	TWI_ACK;
 
 	// Timer 1: Normal mode, Top: 0xffff, Prescaler: F_CPU/256=62500Hz
 	TCCR1A = 0x0;
@@ -317,10 +323,11 @@ int main(void) {
 			case 0xff: // Magic reg that starts the bootloader
 				if (bootloader == 0xa5) {
 					cli();
-					{
-						void (*start)(void) = (void*)0x1800;
-						start();
-					}
+					// write mark to first area in eeprom
+					eeprom_write_byte((uint8_t*)0, 123);
+					eeprom_busy_wait();
+					// Use watchdog to restart
+					wdt_enable(WDTO_15MS);
 				}
 				break;
 		}
