@@ -937,7 +937,8 @@ static void update_pid(void) {
 			speed1_wish_old = speed1_wish;
 		}
 
-		if (speed1_wish == 0) {
+		uint8_t dir_change = (speed1_wish > 0 && speed1 < 0) || (speed1_wish < 0 && speed1 > 0); // Prevent dangerous immediate engine reverse
+		if (speed1_wish == 0 || dir_change) {
 			motor1 = 0;
 			eold1 = 0;
 			error_state &= ~(1<<4);
@@ -959,7 +960,8 @@ static void update_pid(void) {
 			speed2_wish_old = speed2_wish;
 		}
 
-		if (speed2_wish == 0) {
+		uint8_t dir_change = (speed2_wish > 0 && speed2 < 0) || (speed2_wish < 0 && speed2 > 0); // Prevent dangerous immediate engine reverse
+		if (speed2_wish == 0 || dir_change) {
 			motor2 = 0;
 			eold2 = 0;
 			error_state &= ~(1<<5);
@@ -981,7 +983,8 @@ static void update_pid(void) {
 			speed3_wish_old = speed3_wish;
 		}
 
-		if (speed3_wish == 0) {
+		uint8_t dir_change = (speed3_wish > 0 && speed3 < 0) || (speed3_wish < 0 && speed3 > 0); // Prevent dangerous immediate engine reverse
+		if (speed3_wish == 0 || dir_change) {
 			motor3 = 0;
 			eold3 = 0;
 			error_state &= ~(1<<6);
@@ -1003,7 +1006,8 @@ static void update_pid(void) {
 			speed4_wish_old = speed4_wish;
 		}
 
-		if (speed4_wish == 0) {
+		uint8_t dir_change = (speed4_wish > 0 && speed4 < 0) || (speed4_wish < 0 && speed4 > 0); // Prevent dangerous immediate engine reverse
+		if (speed4_wish == 0 || dir_change) {
 			motor4 = 0;
 			eold4 = 0;
 			error_state &= ~(1<<7);
