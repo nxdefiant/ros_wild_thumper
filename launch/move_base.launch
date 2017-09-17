@@ -20,7 +20,7 @@
 			<!-- Specifies the expected noise in odometry's rotation estimate from translational component of the robot's motion. -->
 			<param name="odom_alpha2" value="0.00001" />
 			<!-- Specifies the expected noise in odometry's translation estimate from the translational component of the robot's motion. -->
-			<param name="odom_alpha3" value="0.03" />
+			<param name="odom_alpha3" value="0.04" />
 			<!-- Specifies the expected noise in odometry's translation estimate from the rotational component of the robot's motion. -->
 			<param name="odom_alpha4" value="0.001" />
 			<!-- How many evenly-spaced beams in each scan to be used when updating the filter. -->
