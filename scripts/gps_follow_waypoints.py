@@ -24,7 +24,7 @@ class GPSGotoCoords:
 
 		rospy.loginfo("Setting paramters")
 		self.dynreconf = dynamic_reconfigure.client.Client("/move_base/TrajectoryPlannerROS")
-		self.dynreconf.update_configuration({'max_vel_x': 0.5, 'max_vel_theta': 1.0})
+		self.dynreconf.update_configuration({'max_vel_x': 1.0, 'max_vel_theta': 1.2, 'min_in_place_vel_theta': 1.0})
 
 		rospy.loginfo("Waiting for the move_base action server to come up")
 		self.move_base.wait_for_server()
