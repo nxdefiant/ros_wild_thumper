@@ -267,6 +267,7 @@ class MoveBase:
 		odom.child_frame_id = "base_footprint"
 		odom.twist.twist.linear.x = speed_trans
 		odom.twist.twist.linear.y = 0.0
+		odom.twist.twist.linear.z = 0.0
 		odom.twist.twist.angular.z = speed_rot
 		odom.twist.covariance = odom.pose.covariance
 
