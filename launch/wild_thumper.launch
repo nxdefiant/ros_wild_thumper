@@ -31,7 +31,7 @@
 		<arg name="nodelet_manager_name" value="nodelet_manager" />
 	</include>
 
-	<node pkg="robot_localization" type="ekf_localization_node" name="ekf" clear_params="true" output="screen">
+	<node pkg="robot_localization" type="ekf_localization_node" name="ekf" clear_params="true" output="screen" if="$(arg use_imu)">
 		<rosparam command="load" file="$(find wild_thumper)/config/robot_localization.yaml"/>
 		<remap from="odometry/filtered" to="odom_combined"/>
 	</node>

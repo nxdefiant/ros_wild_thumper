@@ -30,14 +30,9 @@
 		<remap from="/image" to="/camera/depth/image_raw"/>
         </node>
 
-	<node pkg="robot_pose_ekf" type="robot_pose_ekf" name="robot_pose_ekf" output="screen" if="$(arg use_imu)">
-		<remap from="imu_data" to="imu"/>
-		<remap from="robot_pose_ekf/odom_combined" to="odom_combined"/>
-		<param name="output_frame" value="odom"/>
-		<param name="freq" value="20.0"/>
-		<param name="vo_used" value="false"/>
-		<param name="debug" value="true"/>
-		<param name="sensor_timeout" value="2.0"/>
+	<node pkg="robot_localization" type="ekf_localization_node" name="ekf" clear_params="true" output="screen" if="$(arg use_imu)">
+		<rosparam command="load" file="$(find wild_thumper)/config/robot_localization.yaml"/>
+		<remap from="odometry/filtered" to="odom_combined"/>
 	</node>
 
 	<include file="$(find yocs_cmd_vel_mux)/launch/cmd_vel_mux.launch">
