@@ -64,6 +64,7 @@ imu0_queue_size: 10
 #  message types lack certain variables. For example, a TwistWithCovarianceStamped message has no pose information, so
 #  the first six values would be meaningless in that case. Each vector defaults to all false if unspecified, effectively
 #  making this parameter required for each sensor.
+# odom
 # x/y not included because of redundancy with velocities
 # vyaw not included in odom because too inaccurate
 odom0_config: [false, false, false,
@@ -71,6 +72,7 @@ odom0_config: [false, false, false,
                true,  true,  true,
                false, false, true,
                false, false, false]
+# gps
 odom1_config: [true,  true,  false,
                false, false, false,
                false, false, false,

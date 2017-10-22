@@ -4,6 +4,7 @@
 import rospy
 import tf
 import struct
+import thread
 import prctl
 import spidev
 from time import sleep
@@ -48,7 +49,7 @@ class LPD8806:
 		self.spi.writebytes(l)
 		self.latch()
 
-class MoveBase:
+class WTBase:
 	def __init__(self):
 		rospy.init_node('wild_thumper')
 		prctl.set_name("wild_thumper")
@@ -77,6 +78,8 @@ class MoveBase:
 		rospy.Subscriber("cmd_vel_out", Twist, self.cmdVelReceived)
 		rospy.Subscriber("led_stripe", LedStripe, self.led_stripe_received)
 		rospy.Subscriber("imu", Imu, self.imuReceived)
+		self.bDocked = False
+		self.bDocked_last = False
 		self.run()
 	
 	def run(self):
@@ -117,6 +120,8 @@ class MoveBase:
 				self.set_speed(self.cmd_vel[0], self.cmd_vel[1])
 				self.cur_vel = self.cmd_vel
 				self.cmd_vel = None
+
+			self.check_docked()
 			rate.sleep()
 
 	def execute_dyn_reconf(self, config, level):
@@ -128,6 +133,7 @@ class MoveBase:
 		self.rollover_protect = config["rollover_protect"]
 		self.rollover_protect_limit = config["rollover_protect_limit"]
 		self.rollover_protect_pwm = config["rollover_protect_pwm"]
+		self.bStayDocked = config["stay_docked"]
 
 		return config
 
@@ -230,6 +236,8 @@ class MoveBase:
 		if volt < 7 and (rospy.Time.now() - self.volt_last_warn).to_sec() > 10:
 			rospy.logerr("Voltage critical: %.2fV" % (volt))
 			self.volt_last_warn = rospy.Time.now()
+
+		self.bDocked = volt > 10
 
 
 	def get_odom(self):
@@ -365,7 +373,31 @@ class MoveBase:
 		for led in msg.leds:
 			self.pStripe.set(led.num, red=led.red, green=led.green, blue=led.blue)
 			self.pStripe.update()
+
+	def check_docked(self):
+		if self.bDocked and not self.bDocked_last:
+			rospy.loginfo("Docking event")
+		elif not self.bDocked and self.bDocked_last:
+			if not self.bStayDocked or self.cur_vel != (0, 0):
+				rospy.loginfo("Undocking event")
+			else:
+				rospy.loginfo("Undocking event..redocking")
+				thread.start_new_thread(self.redock, ())
+
+		self.bDocked_last = self.bDocked
+
+	def redock(self):
+		self.cmd_vel = (-0.1, 0)
+		for i in range(100):
+			if self.bDocked:
+				break
+			sleep(0.01)
+		self.cmd_vel = (0, 0)
+		if self.bDocked:
+			rospy.loginfo("Redocking done")
+		else:
+			rospy.logerr("Redocking failed")
 		
 
 if __name__ == "__main__":
-	MoveBase()
+	WTBase()
