@@ -20,9 +20,9 @@ ISR(USART_RX_vect) {
 
 
 void setup_uart(unsigned int rate) {
-	UCSR0B |= (1<<TXEN0) | (1<<RXEN0); // UART TX & RX
+	UCSR0B = (1<<TXEN0) | (1<<RXEN0); // UART TX & RX
 	UCSR0B |= (1<<RXCIE0); 		// RX Interrupt
-	UCSR0C |= (3<<UCSZ00); // Asynchron 8N1
+	UCSR0C = (3<<UCSZ00); // Asynchron 8N1
 
 	UBRR0H = (uint8_t)(UART_UBRR_CALC(rate, F_CPU) >> 8);
 	UBRR0L = (uint8_t)UART_UBRR_CALC(rate, F_CPU);

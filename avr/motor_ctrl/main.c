@@ -382,7 +382,7 @@ ISR(TWI_vect)
 				default:
 					TWI_NAK;
 			}
-			ireg++;
+			if (ireg < 0xff) ireg++;
 			break;
 		case TW_ST_SLA_ACK: // start read
 		case TW_ST_DATA_ACK: // read

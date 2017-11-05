@@ -8,6 +8,7 @@
 #include <util/twi.h>
 #include <avr/eeprom.h>
 #include <avr/wdt.h>
+#include <avr/pgmspace.h>
 #include "uart.h"
 
 /*
@@ -81,7 +82,7 @@ ISR(TWI_vect)
 				default:
 					TWI_NAK;
 			}
-			ireg++;
+			if (ireg < 0xff) ireg++;
 			break;
 		case TW_ST_SLA_ACK: // start read
 		case TW_ST_DATA_ACK: // read
@@ -305,7 +306,7 @@ int main(void) {
 	EICRA = (1 << ISC10) | (1 << ISC00);
 	PCICR = (1 << PCIE2);
 
-	printf("\r\nStart\r\n");
+	printf_P(PSTR("\r\nStart\r\n"));
 
 	set_sleep_mode(SLEEP_MODE_IDLE);
 	sei();

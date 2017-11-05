@@ -134,7 +134,7 @@ PRINTF_LIB_MIN = -Wl,-u,vfprintf -lprintf_min
 # Floating point printf version (requires MATH_LIB = -lm below)
 PRINTF_LIB_FLOAT = -Wl,-u,vfprintf -lprintf_flt -lm
 
-PRINTF_LIB = 
+PRINTF_LIB = $(PRINTF_LIB_MIN)
 
 # Minimalistic scanf version
 SCANF_LIB_MIN = -Wl,-u,vfscanf -lscanf_min
@@ -144,7 +144,7 @@ SCANF_LIB_FLOAT = -Wl,-u,vfscanf -lscanf_flt
 
 SCANF_LIB = 
 
-MATH_LIB = -lm
+MATH_LIB = #-lm
 
 # External memory options
 
@@ -164,7 +164,7 @@ EXTMEMOPTS =
 #    --cref:    add cross reference to  map file
 LDFLAGS = -Wl,-Map=$(TARGET).map,--cref
 LDFLAGS += $(EXTMEMOPTS)
-LDFLAGS += $(PRINTF_LIB_MIN) $(SCANF_LIB) $(MATH_LIB)
+LDFLAGS += $(PRINTF_LIB) $(SCANF_LIB) $(MATH_LIB)
 
 
 
