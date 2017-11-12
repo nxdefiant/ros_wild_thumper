@@ -113,6 +113,7 @@
 #define WHEEL_DIST 0.39912 // Measured: 0.252
 #define PWM_BREAK INT16_MIN
 #define STALL_LIMIT 140000
+#define I2C_TIMEOUT_DISABLE 255
 
 #define TWI_ACK   TWCR = (1<<TWINT) | (1<<TWEA) | (1<<TWEN) | (1<<TWIE)
 #define TWI_NAK   TWCR = (1<<TWINT) | (1<<TWEN) | (1<<TWIE)
@@ -183,6 +184,7 @@ static volatile uint8_t count_test=0;
 static volatile uint8_t front_handicap=0;
 static volatile uint8_t aft_handicap=0;
 static volatile uint8_t error_state=0;
+static volatile uint8_t last_man_update_count=I2C_TIMEOUT_DISABLE;
 
 ISR(TWI_vect)
 {
@@ -349,6 +351,7 @@ ISR(TWI_vect)
 					tmp_angle.i = tmp_angle.i << 8 | TWDR;
 					cmd_vel.angle = tmp_angle.f;
 					cmd_vel.bUpdate = 1;
+					last_man_update_count = 0;
 					TWI_ACK;
 					break;
 				case 0x90: // Motor 1 switch
@@ -1144,6 +1147,15 @@ int main(void) {
 			update_pid();
 			update_motor();
 			count_test++;
+			if (last_man_update_count != I2C_TIMEOUT_DISABLE) last_man_update_count++;
+
+			if (last_man_update_count > 100) {
+				// ~1s without a new i2c command
+				cmd_vel.speed = 0;
+				cmd_vel.angle = 0;
+				cmd_vel.bUpdate = 1;
+				last_man_update_count = I2C_TIMEOUT_DISABLE;
+			}
 		}
 
 		sleep_mode();
