@@ -26,6 +26,8 @@
  * 0x0A Voltage LSB
  * 0x0B Distance forward2 MSB
  * 0x0C Distance forward2 LSB
+ * 0x0D Current MSB
+ * 0x0E Current LSB
  *
  * 0x15 Distance forward1 MSB (read only)
  * 0x16 Distance forward1 LSB (read only)
@@ -53,6 +55,7 @@ static volatile uint8_t start_dist_fwd1=0;
 static volatile uint8_t start_dist_fwd2=0;
 static volatile uint8_t start_dist_bwd=0;
 static volatile uint16_t voltage=0;
+static volatile uint16_t current=0;
 static volatile uint8_t pind_pre=0;
 
 ISR(TWI_vect)
@@ -138,6 +141,15 @@ ISR(TWI_vect)
 					TWI_ACK;
 					break;
 				case 0x0C: // Distance forward2 LSB
+					TWDR = tmp16;
+					TWI_ACK;
+					break;
+				case 0x0D: // Current MSB
+					tmp16 = current;
+					TWDR = tmp16>>8;
+					TWI_ACK;
+					break;
+				case 0x0E: // Current LSB
 					TWDR = tmp16;
 					TWI_ACK;
 					break;
@@ -232,6 +244,16 @@ static unsigned short get_voltage(void) {
 }
 
 
+/*
+ * zero offset: 0.5V
+ * sensitivity: 133mV/A
+ */
+static unsigned short get_current(void) {
+	double volt = ReadChannel(3)*5.0171; // mV
+	return (volt-517.78)/0.12656; // mA
+}
+
+
 ISR(INT0_vect) {
 	static uint16_t t_start=0;
 	uint16_t t_now = TCNT1;
@@ -320,6 +342,9 @@ int main(void) {
 				break;
 			case 0x09: // voltage
 				voltage = get_voltage();
+				break;
+			case 0x0d: // current
+				current = get_current();
 				break;
 			case 0xff: // Magic reg that starts the bootloader
 				if (bootloader == 0xa5) {

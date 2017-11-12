@@ -219,11 +219,13 @@ class WTBase:
 		msg.status.append(stat)
 		self.pub_diag.publish(msg)
 
+		current = struct.unpack(">h", i2c_read_reg(0x52, 0x0D, 2))[0]/1000.0
+
 		if self.pub_battery.get_num_connections() > 0:
 			batmsg = BatteryState()
 			batmsg.header.stamp = rospy.Time.now()
 			batmsg.voltage = volt
-			batmsg.current = float('nan')
+			batmsg.current = current
 			batmsg.charge = float('nan')
 			batmsg.capacity = float('nan')
 			batmsg.design_capacity = 5.0
