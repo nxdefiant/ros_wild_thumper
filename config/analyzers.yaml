@@ -9,7 +9,7 @@ analyzers:
                 path: Reset
                 startswith: 'Reset'
                 timeout: -1
-        voltage:
+        power:
                 type: diagnostic_aggregator/GenericAnalyzer
-                path: Voltage
-                startswith: 'Voltage'
+                path: Power
+                startswith: 'Power'

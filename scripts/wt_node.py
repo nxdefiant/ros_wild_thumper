@@ -94,7 +94,7 @@ class WTBase:
 			#print struct.unpack(">B", i2c_read_reg(0x50, 0xA2, 1))[0] # count test
 			self.get_motor_err()
 			self.get_odom()
-			self.get_voltage()
+			self.get_power()
 
 			if ir_count == 0:
 				self.get_dist_left()
@@ -206,20 +206,19 @@ class WTBase:
 		msg.status.append(stat)
 		self.pub_diag.publish(msg)
 	
-	def get_voltage(self):
+	def get_power(self):
 		volt = struct.unpack(">h", i2c_read_reg(0x52, 0x09, 2))[0]/100.0
+		current = struct.unpack(">h", i2c_read_reg(0x52, 0x0D, 2))[0]/1000.0
 
 		msg = DiagnosticArray()
 		msg.header.stamp = rospy.Time.now()
 		stat = DiagnosticStatus()
-		stat.name = "Voltage"
-		stat.level = DiagnosticStatus.ERROR if volt < 7 else DiagnosticStatus.OK
-		stat.message = "%.2fV" % volt
+		stat.name = "Power"
+		stat.level = DiagnosticStatus.ERROR if volt < 7 or current > 5 else DiagnosticStatus.OK
+		stat.message = "%.2fV, %.2fA" % (volt, current)
 
 		msg.status.append(stat)
 		self.pub_diag.publish(msg)
-
-		current = struct.unpack(">h", i2c_read_reg(0x52, 0x0D, 2))[0]/1000.0
 
 		if self.pub_battery.get_num_connections() > 0:
 			batmsg = BatteryState()
