@@ -40,6 +40,33 @@
  */
 
 
+/**
+ * Nano Pinout
+ * A0 PC0/ADC0
+ * A1 PC1/ADC1
+ * A2 PC2/ADC2
+ * A3 PC3/ADC3
+ * A4 PC4/ADC4
+ * A5 PC5/ADC5
+ * A6 ADC6
+ * A7 ADC7
+ * D0 PD0/RX
+ * D1 PD1/TX
+ * D2 PD2/IND0
+ * D3 PD3/IND1
+ * D4 PD4/T0
+ * D5 PD5/T1
+ * D6 PD6/AIN0
+ * D7 PD7/AIN1
+ * D8 PB0/ICP
+ * D9 PB1/OC1
+ * D10 PB2/SS
+ * D11 PB3/MOSI
+ * D12 PB4/MISO
+ * D13 PB5/SCK
+ */
+
+
 #define TWI_ACK   TWCR = (1<<TWINT) | (1<<TWEA) | (1<<TWEN) | (1<<TWIE)
 #define TWI_NAK   TWCR = (1<<TWINT) | (1<<TWEN) | (1<<TWIE)
 #define TWI_RESET TWCR = (1<<TWINT) | (1<<TWEA) | (1<<TWSTO) | (1<<TWEN) | (1<<TWIE);
