@@ -1,0 +1,223 @@
+<!doctype html>
+<!--
+	Server: python -m SimpleHTTPServer
+	Bridge: roslaunch rosbridge_server rosbridge_websocket.launch
+-->
+<html>
+	<head>
+		<meta charset="utf-8" />
+
+		<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta.2/css/bootstrap.min.css" integrity="sha384-PsH8R72JQ3SOdhVi3uxftmaW6Vc51MKb0q5P2rRUpPvrszuE4W1povHYgTpBfshb" crossorigin="anonymous">
+		<link rel="stylesheet" type="text/css" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css" />
+
+		<script type="text/javascript">
+		function init() {
+			var ros = new ROSLIB.Ros();
+			ros.connect('ws://wildthumper:9090');
+			var isDragging = false;
+
+			ros.on('connection', function() {
+				$("#information").append(`
+				<div class="alert alert-dismissible alert-success">
+					<span data-dismiss="alert">Connected to websocket server.</span>
+				</div>
+				`);
+			});
+
+			ros.on('error', function(error) {
+				$("#information").append(`
+				<div class="alert alert-dismissible alert-danger">
+					<span data-dismiss="alert">Error connecting to websocket server.</span>
+				</div>
+				`);
+			});
+
+			ros.on('close', function() {
+				$("#information").append(`
+				<div class="alert alert-dismissible alert-info">
+					<span data-dismiss="alert">Connection to websocket server closed.</span>
+				</div>
+				`);
+			});
+
+			//tfClient.subscribe('base_link', function(tf) {
+			//	var now = new Date();
+			//	$("#pose").text(now.toLocaleTimeString() + ": (" + tf.translation.x + ", " + tf.translation.y + ")");
+
+			//	robotMarker.x = tf.translation.x;
+			//	robotMarker.y = -tf.translation.y;
+			//	robotMarker.rotation = viewer2D.scene.rosQuaternionToGlobalTheta(tf.rotation);
+			//});
+			var poseTopic = new ROSLIB.Topic({ros: ros, name: '/robot_pose', messageType : 'geometry_msgs/Pose'});
+			var sensorTopic = new ROSLIB.Topic({ros: ros, name: '/sensors', messageType : 'wild_thumper/Sensor'});
+			var batteryTopic = new ROSLIB.Topic({ros: ros, name: '/battery', messageType : 'sensor_msgs/BatteryState'});
+
+			poseTopic.subscribe(function(message) {
+				var now = new Date();
+				$("#pose").text(now.toLocaleTimeString() + ": (" + message.position.x + ", " + message.position.y + ")");
+			});
+
+			sensorTopic.subscribe(function(message) {
+				sensordiv = $("#sensors")
+				sensordiv.find("input[name=light]").val(message.light);
+				sensordiv.find("input[name=temp]").val(message.temp.toFixed(1));
+				sensordiv.find("input[name=humidity]").val(message.humidity);
+				sensordiv.find("input[name=pressure]").val(message.pressure.toFixed(1));
+				sensordiv.find("input[name=co]").val(message.co);
+			});
+
+			itest = 123.4556;
+			batteryTopic.subscribe(function(message) {
+				powerdiv = $("#power");
+				powerdiv.find("input[name=voltage]").val(message.voltage.toFixed(1));
+				powerdiv.find("input[name=current]").val(message.current.toFixed(1));
+			});
+
+			viewer2D = new ROS2D.Viewer({
+				divID: 'map',
+				width: 640,
+				height: 480,
+				background: "#efefef"
+			});
+			$('#map')
+			.bind('mousewheel', function(e) {
+				if (e.originalEvent.wheelDelta/120 > 0) {
+					viewer2D.scaleToDimensions(10, 10)
+				} else {
+					viewer2D.scaleToDimensions(5, 5)
+				}
+			})
+			.mousedown(function() {
+				isDragging = true;
+				mousePreX = undefined;
+				mousePreY = undefined;
+			})
+			.mouseup(function() {
+				isDragging = false;
+			})
+			.mousemove(function(event) {
+				if (isDragging) {
+					if (mousePreX != undefined && mousePreY != undefined) {
+						var diffX = event.pageX - mousePreX;
+						var diffY = event.pageY - mousePreY;
+						console.log("Moving viewer2D by " + diffX + ", " + diffY);
+						viewer2D.shift(diffX, diffY);
+					}
+					mousePreX = event.pageX;
+					mousePreY = event.pageY;
+				}
+			});
+
+			// Setup the nav client.
+			NAV2D.OccupancyGridClientNav({
+				ros : ros,
+				rootObject : viewer2D.scene,
+				viewer : viewer2D,
+				serverName : '/move_base'
+			});
+
+			// Initialize the teleop.
+			var teleop = new KEYBOARDTELEOP.Teleop({
+				ros : ros,
+				topic : '/cmd_vel'
+			});
+
+			// Create a UI slider using JQuery UI.
+			$('#speed-slider').slider({
+				range : 'min',
+				min : 0,
+				max : 100,
+				value : 50,
+				slide : function(event, ui) {
+					// Change the speed label.
+					$('#speed-label').html('Speed: ' + ui.value + '%');
+					// Scale the speed.
+					teleop.scale = (ui.value / 100.0);
+				}
+			});
+
+			// Set the initial speed.
+			$('#speed-label').html('Speed: ' + ($('#speed-slider').slider('value')) + '%');
+			teleop.scale = ($('#speed-slider').slider('value') / 100.0);
+		}
+		</script>
+	</head>
+	<body onload="init()">
+		<div class="container-fluid">
+			<div id="information">
+			</div>
+
+			<nav class="navbar navbar-expand-lg navbar-light bg-light">
+				<a class="navbar-brand" href="#">Wild Thumper</a>
+				<ul class="nav nav-tabs" role="tablist">
+					<li class="nav-item">
+						<a class="nav-link active" href="#data" data-toggle="tab" role="tab">Data</a>
+					</li>
+					<li class="nav-item">
+						<a class="nav-link" href="#navigation" data-toggle="tab" role="tab">Navigation</a>
+					</li>
+				</ul>
+			</nav>
+			<div class="tab-content">
+				<div id="data" class="tab-pane active" role="tabpanel">
+					<div class="row">
+						<div id="power" class="col-auto">
+							<h4>Power</h4>
+							<label>Voltage:</label>
+							<div class="input-group">
+								<input type=text name="voltage" class="form-control" readonly>
+								<div class="input-group-addon">V</div>
+							</div>
+							<label>Current:</label>
+							<div class="input-group">
+								<input type=text name="current" class="form-control" readonly>
+								<div class="input-group-addon">A</div>
+							</div>
+						</div>
+						<div id="sensors" class="col-auto">
+							<h4>Sensors</h4>
+							<label>Light:</label>
+							<div class="input-group">
+								<input type=text name="light" class="form-control" readonly>
+								<div class="input-group-addon">lx</div>
+							</div>
+							<label>Temperature:</label>
+							<div class="input-group">
+								<input type=text name="temp" class="form-control" readonly>
+								<div class="input-group-addon">&#x2103</div>
+							</div>
+							<label>Humidity:</label>
+							<div class="input-group">
+								<input type=text name="humidity" class="form-control" readonly>
+								<div class="input-group-addon">%</div>
+							</div>
+							<label>Pressure:</label>
+							<div class="input-group">
+								<input type=text name="pressure" class="form-control" readonly>
+								<div class="input-group-addon">kPa</div>
+							</div>
+							<label>CO:</label>
+							<input type=text name="co" class="form-control" readonly>
+						</div>
+					</div>
+				</div>
+				<div id="navigation" class="tab-pane" role="tabpanel">
+					<div id="pose"></div>
+					<div id="map"></div>
+					<div id="speed-label"></div>
+					<div id="speed-slider"></div>
+				</div>
+			</div>
+		</div>
+		<script src="https://code.jquery.com/jquery-3.2.1.min.js"></script>
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.3/umd/popper.min.js" integrity="sha384-vFJXuSJphROIrBnz7yo7oB41mKfc8JzQZiCq4NCceLEaO4IHwicKwpJf9c9IpFgh" crossorigin="anonymous"></script>
+		<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta.2/js/bootstrap.min.js" integrity="sha384-alpBpkh1PFOepccYVYDB4do5UnbKysX5WZXm3XxPqe5iKTfUKjNkCk9SaVuEZflJ" crossorigin="anonymous"></script>
+		<script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
+		<script src="http://static.robotwebtools.org/EaselJS/current/easeljs.min.js"></script>
+		<script src="http://static.robotwebtools.org/EventEmitter2/current/eventemitter2.js"></script>
+		<script src="http://static.robotwebtools.org/roslibjs/current/roslib.js"></script>
+		<script src="http://static.robotwebtools.org/ros2djs/current/ros2d.js"></script>
+		<script src="http://static.robotwebtools.org/nav2djs/current/nav2d.js"></script>
+		<script src="http://static.robotwebtools.org/keyboardteleopjs/current/keyboardteleop.js"></script>
+	</body>
+</html>
