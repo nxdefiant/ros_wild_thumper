@@ -1,14 +1,15 @@
 <!doctype html>
-<!--
-	Server: python -m SimpleHTTPServer
-	Bridge: roslaunch rosbridge_server rosbridge_websocket.launch
--->
 <html>
 	<head>
 		<meta charset="utf-8" />
 
-		<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta.2/css/bootstrap.min.css" integrity="sha384-PsH8R72JQ3SOdhVi3uxftmaW6Vc51MKb0q5P2rRUpPvrszuE4W1povHYgTpBfshb" crossorigin="anonymous">
-		<link rel="stylesheet" type="text/css" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css" />
+		<link rel="stylesheet" href="assets/stylesheets/bootstrap.min.css">
+		<link rel="stylesheet" href="assets/stylesheets/jquery-ui.css">
+		<link rel="stylesheet" href="assets/stylesheets/jquery.minicolors.css">
+
+		<style>
+		.minicolors-theme-default.minicolors { margin: 5px; }
+		</style>
 
 		<script type="text/javascript">
 		function init() {
@@ -48,9 +49,10 @@
 			//	robotMarker.y = -tf.translation.y;
 			//	robotMarker.rotation = viewer2D.scene.rosQuaternionToGlobalTheta(tf.rotation);
 			//});
-			var poseTopic = new ROSLIB.Topic({ros: ros, name: '/robot_pose', messageType : 'geometry_msgs/Pose'});
-			var sensorTopic = new ROSLIB.Topic({ros: ros, name: '/sensors', messageType : 'wild_thumper/Sensor'});
-			var batteryTopic = new ROSLIB.Topic({ros: ros, name: '/battery', messageType : 'sensor_msgs/BatteryState'});
+			var poseTopic = new ROSLIB.Topic({ros: ros, name: '/robot_pose', messageType: 'geometry_msgs/Pose'});
+			var sensorTopic = new ROSLIB.Topic({ros: ros, name: '/sensors', messageType: 'wild_thumper/Sensor'});
+			var batteryTopic = new ROSLIB.Topic({ros: ros, name: '/battery', messageType: 'sensor_msgs/BatteryState'});
+			var ledStripeTopic = new ROSLIB.Topic({ros: ros, name: '/led_stripe', messageType: 'wild_thumper/LedStripe'});
 
 			poseTopic.subscribe(function(message) {
 				var now = new Date();
@@ -66,7 +68,6 @@
 				sensordiv.find("input[name=co]").val(message.co);
 			});
 
-			itest = 123.4556;
 			batteryTopic.subscribe(function(message) {
 				powerdiv = $("#power");
 				powerdiv.find("input[name=voltage]").val(message.voltage.toFixed(1));
@@ -139,8 +140,28 @@
 			// Set the initial speed.
 			$('#speed-label').html('Speed: ' + ($('#speed-slider').slider('value')) + '%');
 			teleop.scale = ($('#speed-slider').slider('value') / 100.0);
+
+			$('.led_color').minicolors({
+				control: 'wheel',
+				format: 'rgb',
+				defaultValue: '#000000',
+				change: function(value) {
+					var rgb = $(this).minicolors('rgbObject');
+					var num = $(this).prop("name");
+					var msg = new ROSLIB.Message({
+						leds: [{
+							num: parseInt(num),
+							red: parseInt(rgb.r*127/255),
+							green: parseInt(rgb.g*127/255),
+							blue: parseInt(rgb.b*127/255)
+						}]
+					});
+					ledStripeTopic.publish(msg);
+				}
+			});
 		}
 		</script>
+		<title>Wild Thumper control</title>
 	</head>
 	<body onload="init()">
 		<div class="container-fluid">
@@ -156,6 +177,9 @@
 					<li class="nav-item">
 						<a class="nav-link" href="#navigation" data-toggle="tab" role="tab">Navigation</a>
 					</li>
+					<li class="nav-item">
+						<a class="nav-link" href="#lights" data-toggle="tab" role="tab">Lights</a>
+					</li>
 				</ul>
 			</nav>
 			<div class="tab-content">
@@ -166,12 +190,16 @@
 							<label>Voltage:</label>
 							<div class="input-group">
 								<input type=text name="voltage" class="form-control" readonly>
-								<div class="input-group-addon">V</div>
+								<div class="input-group-append">
+									<span class="input-group-text">V</span>
+								</div>
 							</div>
 							<label>Current:</label>
 							<div class="input-group">
 								<input type=text name="current" class="form-control" readonly>
-								<div class="input-group-addon">A</div>
+								<div class="input-group-append">
+									<span class="input-group-text">A</span>
+								</div>
 							</div>
 						</div>
 						<div id="sensors" class="col-auto">
@@ -179,22 +207,30 @@
 							<label>Light:</label>
 							<div class="input-group">
 								<input type=text name="light" class="form-control" readonly>
-								<div class="input-group-addon">lx</div>
+								<div class="input-group-append">
+									<span class="input-group-text">lx</span>
+								</div>
 							</div>
 							<label>Temperature:</label>
 							<div class="input-group">
 								<input type=text name="temp" class="form-control" readonly>
-								<div class="input-group-addon">&#x2103</div>
+								<div class="input-group-append">
+									<span class="input-group-text">&#x2103</span>
+								</div>
 							</div>
 							<label>Humidity:</label>
 							<div class="input-group">
 								<input type=text name="humidity" class="form-control" readonly>
-								<div class="input-group-addon">%</div>
+								<div class="input-group-append">
+									<span class="input-group-text">%</span>
+								</div>
 							</div>
 							<label>Pressure:</label>
 							<div class="input-group">
 								<input type=text name="pressure" class="form-control" readonly>
-								<div class="input-group-addon">kPa</div>
+								<div class="input-group-append">
+									<span class="input-group-text">kPa</span>
+								</div>
 							</div>
 							<label>CO:</label>
 							<input type=text name="co" class="form-control" readonly>
@@ -207,17 +243,58 @@
 					<div id="speed-label"></div>
 					<div id="speed-slider"></div>
 				</div>
+				<div id="lights" class="tab-pane" role="tabpanel">
+					<div class="row d-flex align-items-center">
+						<div class="col-md-1">
+							<div class="float-right align-middle">
+								<input class="led_color" type="hidden" name="15"/>
+								<input class="led_color" type="hidden" name="14"/>
+							</div>
+						</div>
+						<div class="col-md-2" >
+							<div class="d-flex justify-content-center">
+								<input class="led_color" type="hidden" name="0"/>
+								<input class="led_color" type="hidden" name="1"/>
+								<input class="led_color" type="hidden" name="2"/>
+								<input class="led_color" type="hidden" name="3"/>
+							</div>
+							<div>
+								<div style="background: url('assets/images/wt_top.png'); background-size: cover; background-size: 100%; background-repeat: no-repeat; height: 260px;">
+									<div class="d-flex justify-content-center" style="padding-top: 70px;">
+										<input class="led_color" type="hidden" name="7"/>
+										<input class="led_color" type="hidden" name="6"/>
+										<input class="led_color" type="hidden" name="5"/>
+										<input class="led_color" type="hidden" name="4"/>
+									</div>
+								</div>
+							</div>
+							<div class="d-flex justify-content-center">
+								<input class="led_color" type="hidden" name="8"/>
+								<input class="led_color" type="hidden" name="9"/>
+								<input class="led_color" type="hidden" name="10"/>
+								<input class="led_color" type="hidden" name="11"/>
+							</div>
+						</div>
+						<div class="col-md-1">
+							<div class="float-left align-middle">
+								<input class="led_color" type="hidden" name="13"/>
+								<input class="led_color" type="hidden" name="12"/>
+							</div>
+						</div>
+					</div>
+				</div>
 			</div>
 		</div>
-		<script src="https://code.jquery.com/jquery-3.2.1.min.js"></script>
-		<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.3/umd/popper.min.js" integrity="sha384-vFJXuSJphROIrBnz7yo7oB41mKfc8JzQZiCq4NCceLEaO4IHwicKwpJf9c9IpFgh" crossorigin="anonymous"></script>
-		<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta.2/js/bootstrap.min.js" integrity="sha384-alpBpkh1PFOepccYVYDB4do5UnbKysX5WZXm3XxPqe5iKTfUKjNkCk9SaVuEZflJ" crossorigin="anonymous"></script>
-		<script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
-		<script src="http://static.robotwebtools.org/EaselJS/current/easeljs.min.js"></script>
-		<script src="http://static.robotwebtools.org/EventEmitter2/current/eventemitter2.js"></script>
-		<script src="http://static.robotwebtools.org/roslibjs/current/roslib.js"></script>
-		<script src="http://static.robotwebtools.org/ros2djs/current/ros2d.js"></script>
-		<script src="http://static.robotwebtools.org/nav2djs/current/nav2d.js"></script>
-		<script src="http://static.robotwebtools.org/keyboardteleopjs/current/keyboardteleop.js"></script>
+		<script src="assets/javascripts/jquery-3.3.1.min.js"></script>
+		<script src="assets/javascripts/popper.min.js"></script>
+		<script src="assets/javascripts/bootstrap.min.js"></script>
+		<script src="assets/javascripts/jquery-ui.min.js"></script>
+		<script src="assets/javascripts/easeljs.min.js"></script>
+		<script src="assets/javascripts/eventemitter2.js"></script>
+		<script src="assets/javascripts/roslib.js"></script>
+		<script src="assets/javascripts/ros2d.js"></script>
+		<script src="assets/javascripts/nav2d.js"></script>
+		<script src="assets/javascripts/keyboardteleop.js"></script>
+		<script src="assets/javascripts/jquery.minicolors.js"></script>
 	</body>
 </html>
