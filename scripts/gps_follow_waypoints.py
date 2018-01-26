@@ -64,7 +64,7 @@ class GPSGotoCoords:
 		if self.move_base.get_state() == GoalStatus.SUCCEEDED:
 			rospy.loginfo("The base moved to (%f, %f)" % (lat, lon))
 		else:
-			rospy.logerr("The base failed to (%f, %f)" % (lat, lon))
+			rospy.logerr("The base failed to (%f, %f). Error: %d" % (lat, lon, self.move_base.get_state()))
 			exit(1)
 
 	def on_shutdown(self):
