@@ -121,7 +121,7 @@
 			});
 
 			// Initialize the teleop.
-			var teleop = new KEYBOARDTELEOP.Teleop({
+			teleop = new KEYBOARDTELEOP.Teleop({
 				ros : ros,
 				topic : '/cmd_vel'
 			});
@@ -129,20 +129,21 @@
 			// Create a UI slider using JQuery UI.
 			$('#speed-slider').slider({
 				range : 'min',
-				min : 0,
-				max : 100,
-				value : 50,
+				min : 0.10,
+				max : 1.0,
+				step : 0.05,
+				value : 0.5,
 				slide : function(event, ui) {
 					// Change the speed label.
-					$('#speed-label').html('Speed: ' + ui.value + '%');
+					$('#speed-label').html('Speed: ' + ui.value + ' m/s');
 					// Scale the speed.
-					teleop.scale = (ui.value / 100.0);
+					teleop.scale = (ui.value * 2);
 				}
 			});
 
 			// Set the initial speed.
-			$('#speed-label').html('Speed: ' + ($('#speed-slider').slider('value')) + '%');
-			teleop.scale = ($('#speed-slider').slider('value') / 100.0);
+			$('#speed-label').html('Speed: ' + ($('#speed-slider').slider('value')) + ' m/s');
+			teleop.scale = ($('#speed-slider').slider('value') * 2);
 
 			$('.led_color').minicolors({
 				control: 'wheel',
