@@ -52,4 +52,6 @@
 		<remap from="/odometry/filtered" to="odom_combined"/>
 		<remap from="/odometry/gps" to="gps"/>
 	</node>
+
+	<include file="$(find rosbridge_server)/launch/rosbridge_websocket.launch"/>
 </launch>
