@@ -74,7 +74,7 @@ class WTBase:
 		self.volt_last_warn = rospy.Time.now()
 		rospy.loginfo("Init done")
 		i2c_write_reg(0x50, 0x90, struct.pack("BB", 1, 1)) # switch direction
-		self.pStripe = LPD8806(1, 0, 12)
+		self.pStripe = LPD8806(1, 0, 16)
 		rospy.Subscriber("cmd_vel_out", Twist, self.cmdVelReceived)
 		rospy.Subscriber("led_stripe", LedStripe, self.led_stripe_received)
 		rospy.Subscriber("imu", Imu, self.imuReceived)
@@ -138,7 +138,7 @@ class WTBase:
 		return config
 
 	def imuReceived(self, msg):
-		if self.rollover_protect and any(self.cur_vel):
+		if self.rollover_protect and (any(self.cur_vel) or self.bMotorManual):
 			(roll, pitch, yaw) = tf.transformations.euler_from_quaternion(msg.orientation.__getstate__())
 			if pitch > self.rollover_protect_limit*pi/180:
 				self.bMotorManual = True
