@@ -54,4 +54,6 @@
 	</node>
 
 	<include file="$(find rosbridge_server)/launch/rosbridge_websocket.launch"/>
+
+	<node pkg="wild_thumper" type="sensor_board.py" name="sensor_board" output="screen"/>
 </launch>

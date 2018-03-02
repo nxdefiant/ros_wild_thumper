@@ -6,6 +6,5 @@ source $HOME/.screenrc
 screen 0 zsh -is eval 'roscore'
 screen 1 zsh -is eval 'roslaunch --wait wild_thumper wild_thumper.launch'
 screen 2 zsh -is eval 'roslaunch --wait wild_thumper teleop.launch'
-#screen 3 zsh -is eval 'rosrun wild_thumper sensor_board.py'
 #screen 3 zsh -is eval 'roslaunch --wait wild_thumper move_base.launch nomap:=true'
 select 2

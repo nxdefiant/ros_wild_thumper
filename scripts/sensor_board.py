@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: iso-8859-15 -*-
 
+import sys
 import rospy
 import struct
 import prctl
@@ -11,7 +12,7 @@ from pyshared.humidity import *
 from wild_thumper.msg import Sensor
 
 # Board warming offset
-TEMP_ERROR = 0 # -5 # degree celsius
+TEMP_ERROR = 0 # -2.5 # -5 # degree celsius
 PRESSURE_ERROR = -2.5
 
 """
@@ -57,6 +58,11 @@ class SensorBoard:
 	def __init__(self):
 		rospy.init_node('sensor_board')
 		prctl.set_name("sensor_board")
+		try:
+			get()
+		except:
+			print >>sys.stderr, "No sensor board, shutting down"
+			exit(1)
 		self.pub = rospy.Publisher("sensors", Sensor, queue_size=16)
 		self.run()
 
