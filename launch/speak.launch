@@ -1,9 +1,0 @@
-<?xml version="1.0"?>
-<launch>
-	<node name="recognizer" pkg="pocketsphinx" type="recognizer.py">
-		<param name="source" value="alsasrc device=hw:2,0"/>
-		<param name="lm" value="/usr/share/pocketsphinx/model/lm/en_US/hub4.5000.DMP"/>
-		<param name="dict" value="/usr/share/pocketsphinx/model/lm/en_US/cmu07a.dic"/>
-	</node>
-</launch>
-

@@ -1,3 +1,0 @@
-[submodule "scripts/pyshared"]
-	path = scripts/pyshared
-	url = ssh://erik@defiant.homedns.org/home/erik_alt/git/pyshared.git
